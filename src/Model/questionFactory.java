@@ -16,7 +16,7 @@ class QuestionFactory {
             default: return createMultipleChoiceQuestion(difficulty);
         }
     }
-
+    //all the question are place holder
     private MultipleQuestion createMultipleChoiceQuestion(int difficulty) {
         String[][] questions = {
             {"What is the capital of France?", "Paris", "London", "Berlin", "Madrid"},

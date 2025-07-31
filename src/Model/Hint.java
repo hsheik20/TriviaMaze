@@ -9,6 +9,7 @@ class Hint {
         this.used = false;
     }
 
+    //all stuff we will add later
     public String getHintText() { return hintText; }
     public boolean isUsed() { return used; }
     public void use() { this.used = true; }
