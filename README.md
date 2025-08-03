@@ -1,2 +1,2 @@
 # TriviaMaze
-Model.Trivia Maze game for Course Project
+Model.Question Maze game for Course Project

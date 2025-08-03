@@ -15,14 +15,14 @@ public class RoomTest {
 
     @BeforeEach
     void setUp() {
-        room = new Room(1,2);
-        room = new Room(1,3);
+        room = new Room(1, 2);             // keep this as-is
+        neighbor = new Room(1, 3);         // assign neighbor separately
         door = new Door(room, neighbor, null);
 
     }
     @Test
     void testCoordinates() {
-        assertEquals(2, room.getRow());
+        assertEquals(1, room.getRow());
         assertEquals(2, room.getCol());
     }
     @Test

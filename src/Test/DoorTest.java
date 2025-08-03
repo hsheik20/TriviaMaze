@@ -1,23 +1,21 @@
 package Test;
-import Model.Room;
-import Model.Door;
-import Model.TrueFalseQuestion;
-import Model.Trivia;
-import Model.Hint;
+import Model.*;
+import Model.Question;
+
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class DoorTest {
     private Room r1, r2;
-    private Trivia question;
+    private Question question;
     private Door door;
 
     @BeforeEach
     void setUp() {
         r1 = new Room(0, 0);
         r2 = new Room(0, 1);
-        question = new TrueFalseQuestion("Test?", true, new Hint("No hint"));
+       // question = new TrueFalseQuestion("Test?", true, new Hint("No hint"));
         door     = new Door(r1, r2, question);
     }
 
