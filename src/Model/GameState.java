@@ -11,38 +11,48 @@ package Model;
  * This class is managed by {@link GameStateManager}, which handles transitions
  * between different states.
  *
- * @author Husein & Chan
+ * @author all
  */
 public abstract class GameState {
     /** Reference to the game state manager handling this state. */
-    protected GameStateManager manager;
+    protected GameStateManager myManager; // Renamed to follow 'my' prefix convention
+
     /**
      * Default constructor for {@code GameState}.
-     * Initializes an empty state; the {@code manager} is assigned during {@link #enter}.
+     * Initializes an empty state; the {@code myManager} is assigned during {@link #enter(GameStateManager)}.
      */
-    public GameState() {}
+    public GameState() {
+        // No-arg constructor, myManager will be set in enter()
+    }
+
     /**
      * Called when the game enters this state.
      * Use this method to initialize UI, logic, or reset values as needed.
      *
-     * @param manager the {@link GameStateManager} managing this state
+     * @param theManager The {@link GameStateManager} managing this state. Cannot be null.
+     * @throws IllegalArgumentException if theManager is null.
      */
-    public abstract void enter(GameStateManager manager);
+    public abstract void enter(final GameStateManager theManager); // Parameter renamed and made final
+
     /**
      * Called when the game exits this state.
-     * Use this method to perform cleanup operations.
+     * Use this method to perform cleanup operations, such as removing UI components
+     * or stopping ongoing processes.
      */
     public abstract void exit();
+
     /**
      * Called periodically (if needed) to update state-specific logic.
-     * Subclasses may override this for animations, timers, or game logic.
+     * Subclasses may override this for animations, timers, or game logic
+     * that needs continuous processing.
      */
     public abstract void update();
+
     /**
      * Returns a string identifier for the current game state.
-     * Useful for debugging or conditional logic based on current state.
+     * Useful for debugging or conditional logic based on the current state.
      *
-     * @return the name of the state (e.g., "PLAYING", "MAIN_MENU", "GAME_OVER")
+     * @return The name of the state (e.g., "PLAYING", "MAIN_MENU", "GAME_OVER").
      */
     public abstract String getStateName();
 }

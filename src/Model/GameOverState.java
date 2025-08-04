@@ -1,6 +1,7 @@
 package Model;
 
 import javax.swing.JOptionPane;
+
 /**
  * The {@code GameOverState} class represents the state of the game
  * when it has ended—either by the player winning or losing.
@@ -13,82 +14,126 @@ import javax.swing.JOptionPane;
  * @author Husein & Chan
  */
 public class GameOverState extends GameState {
+
+    /** The name of this game state. */
+    private static final String STATE_NAME = "GAME_OVER";
+    /** Message displayed when the player wins. */
+    private static final String WIN_MESSAGE = "Congratulations! You won!";
+    /** Message displayed when the player loses. */
+    private static final String LOSE_MESSAGE = "Game Over! Try again?";
+    /** Title for the game over dialog. */
+    private static final String DIALOG_TITLE = "Game Over";
+    /** Prompt asking the player to play again. */
+    private static final String PLAY_AGAIN_PROMPT = "\n\nWould you like to play again?";
+    /** Format string for displaying game details. */
+    private static final String DETAILS_FORMAT = "Final Score: %d\nQuestions Answered: %d\nPosition Reached: (%d, %d)";
+
+
     /** Indicates whether the player has won the game. */
-    private boolean won;
+    private final boolean myWon;
+
     /**
      * Constructs a new {@code GameOverState} with the specified outcome.
      *
-     * @param won {@code true} if the player won; {@code false} if the player lost
+     * @param theWon {@code true} if the player won; {@code false} if the player lost.
      */
-    public GameOverState(boolean won) {
-        this.won = won;
+    public GameOverState(final boolean theWon) {
+        this.myWon = theWon;
     }
+
     /**
      * Called when entering the Game Over state.
      * Displays a dialog summarizing the game and prompts the user to replay or return to menu.
      *
-     * @param manager the {@link GameStateManager} controlling game states
+     * @param theManager The {@link GameStateManager} controlling game states. Cannot be null.
+     * @throws IllegalArgumentException if theManager is null.
      */
-    public void enter(GameStateManager manager) {
-        this.manager = manager;
+    @Override
+    public void enter(final GameStateManager theManager) {
+        if (theManager == null) {
+            throw new IllegalArgumentException("GameStateManager cannot be null when entering GameOverState.");
+        }
+        this.myManager = theManager; // Assign the manager to the protected field from GameState
 
-        String message = won ? "Congratulations! You won!" : "Game Over! Try again?";
-        String details = getGameDetails(manager);
+        final String message = myWon ? WIN_MESSAGE : LOSE_MESSAGE;
+        final String details = getGameDetails(theManager);
 
-        int result = JOptionPane.showConfirmDialog(
-                manager.getGame(),
-                message + "\n" + details + "\n\nWould you like to play again?",
-                "Game Over",
+        final int result = JOptionPane.showConfirmDialog(
+                myManager.getGame(), // Assuming GameStateManager has a getGame() method that returns the JFrame
+                message + "\n" + details + PLAY_AGAIN_PROMPT,
+                DIALOG_TITLE,
                 JOptionPane.YES_NO_OPTION,
-                won ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE
+                myWon ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE
         );
 
         if (result == JOptionPane.YES_OPTION) {
-            manager.setState(new PlayingState());
+            // Reset player and maze before transitioning to PlayingState
+            myManager.getPlayer().resetPosition();
+            // Assuming GameStateManager has a getMaze() method or similar way to access the maze
+            // If maze is managed directly by GameStateManager, you'd call myManager.getMaze().reset();
+            // For now, assuming PlayingState handles maze initialization/reset.
+            myManager.setState(new PlayingState());
         } else {
-            manager.setState(new MainMenuState());
+            myManager.setState(new MainMenuState());
         }
     }
+
     /**
      * Generates a string detailing the player's final game stats,
      * including score, questions answered, and final position.
      *
-     * @param manager the {@link GameStateManager} from which to fetch player data
-     * @return a formatted string of game details
+     * @param theManager The {@link GameStateManager} from which to fetch player data. Cannot be null.
+     * @return A formatted string of game details.
+     * @throws IllegalArgumentException if theManager is null.
      */
-    private String getGameDetails(GameStateManager manager) {
-        Player player = manager.getPlayer();
+    private String getGameDetails(final GameStateManager theManager) {
+        if (theManager == null) {
+            throw new IllegalArgumentException("GameStateManager cannot be null when getting game details.");
+        }
+        final Player player = theManager.getPlayer();
+        // Assuming player is never null from GameStateManager, or handle it if it can be.
         return String.format(
-                "Final Score: %d\nQuestions Answered: %d\nPosition Reached: (%d, %d)",
+                DETAILS_FORMAT,
                 player.getScore(),
                 player.getQuestionsAnswered(),
                 player.getX(),
                 player.getY()
         );
     }
+
     /**
      * Method called when exiting the Game Over state.
-     * No cleanup is needed in this case.
+     * No specific cleanup is needed in this case.
      */
-    public void exit() {}
+    @Override
+    public void exit() {
+        // No cleanup needed for this state.
+    }
+
     /**
      * Updates logic for this state. No periodic updates needed here.
      */
-    public void update() {}
+    @Override
+    public void update() {
+        // No periodic updates required for this state.
+    }
+
     /**
      * Returns the name of the current state.
      *
-     * @return a string representing the state name ("MAIN_MENU")
+     * @return A string representing the state name ("GAME_OVER").
      */
+    @Override
     public String getStateName() {
-        return "MAIN_MENU";
+        return STATE_NAME;
     }
+
     /**
      * Returns whether the player won the game.
      *
-     * @return {@code true} if the player won, {@code false} otherwise
+     * @return {@code true} if the player won, {@code false} otherwise.
      */
     public boolean isWon() {
-        return won;
+        return myWon;
     }
 }

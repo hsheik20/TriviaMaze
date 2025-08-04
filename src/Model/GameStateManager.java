@@ -17,80 +17,110 @@ package Model;
  */
 public class GameStateManager {
     /** The current active state of the game. */
-    private GameState currentState;
+    private GameState myCurrentState;
     /** Reference to the main game window. */
-    private Game game;
+    private final Game myGame; // Made final as it's set once in constructor
     /** The player instance used throughout the game. */
-    private Player player;
+    private final Player myPlayer; // Made final
     /** The maze representing the current game map. */
-    private Maze maze;
+    private final Maze myMaze; // Made final
     /** The trivia system responsible for questions and answers. */
-    private Trivia trivia;
+    private final Trivia myTrivia; // Made final
+
+    /** Default rows for the maze if not specified. */
+    private static final int DEFAULT_MAZE_ROWS = 5;
+    /** Default columns for the maze if not specified. */
+    private static final int DEFAULT_MAZE_COLS = 5;
+
     /**
      * Constructs a new {@code GameStateManager} and initializes core components.
      *
-     * @param game the main {@link Game} frame which this manager controls
+     * @param theGame The main {@link Game} frame which this manager controls. Cannot be null.
+     * @throws IllegalArgumentException if theGame is null.
      */
-    public GameStateManager(Game game) {
-        this.game = game;
-        this.player = new Player();
-        this.maze = new Maze();
-        this.trivia = new Trivia();
+    public GameStateManager(final Game theGame) {
+        if (theGame == null) {
+            throw new IllegalArgumentException("The Game instance cannot be null.");
+        }
+        this.myGame = theGame;
+        this.myPlayer = new Player();
+        // Initialize Maze with default dimensions, assuming a no-arg constructor is not available
+        this.myMaze = new Maze(DEFAULT_MAZE_ROWS, DEFAULT_MAZE_COLS);
+        this.myTrivia = new Trivia();
+
+        // Set the initial state, e.g., to MainMenuState
+        // This should be done after all components are initialized.
+        setState(new MainMenuState()); // Assuming MainMenuState exists
     }
+
     /**
      * Transitions from the current game state to a new one.
      * The existing state's {@code exit()} method is called, followed by the
      * new state's {@code enter()} method.
      * Also triggers the UI to show the panel corresponding to the new state's name.
      *
-     * @param newState the new {@link GameState} to transition into
+     * @param theNewState The new {@link GameState} to transition into. Cannot be null.
+     * @throws IllegalArgumentException if theNewState is null.
      */
-    public void setState(GameState newState) {
-        if (currentState != null) {
-            currentState.exit();
+    public void setState(final GameState theNewState) {
+        if (theNewState == null) {
+            throw new IllegalArgumentException("The new GameState cannot be null.");
         }
-        currentState = newState;
-        currentState.enter(this);
-        game.showPanel(newState.getStateName());
+
+        if (myCurrentState != null) {
+            myCurrentState.exit();
+        }
+        myCurrentState = theNewState;
+        myCurrentState.enter(this); // Pass 'this' GameStateManager to the new state
+
+        // This method assumes the 'Game' class has a method 'showPanel'
+        // that can switch the displayed JPanel based on the state name.
+        // You would need to implement 'public void showPanel(String panelName)' in your Game class.
+        myGame.showPanel(theNewState.getStateName());
     }
+
     /**
      * Returns the current active game state.
      *
-     * @return the active {@link GameState}
+     * @return The active {@link GameState}.
      */
     public GameState getCurrentState() {
-        return currentState;
+        return myCurrentState;
     }
+
     /**
      * Returns the main game window.
      *
-     * @return the {@link Game} instance
+     * @return The {@link Game} instance.
      */
     public Game getGame() {
-        return game;
+        return myGame;
     }
+
     /**
      * Returns the player object.
      *
-     * @return the {@link Player} instance
+     * @return The {@link Player} instance.
      */
     public Player getPlayer() {
-        return player;
+        return myPlayer;
     }
+
     /**
      * Returns the maze map.
      *
-     * @return the {@link Maze} instance
+     * @return The {@link Maze} instance.
      */
     public Maze getMaze() {
-        return maze;
+        return myMaze;
     }
+
     /**
      * Returns the trivia system.
      *
-     * @return the {@link Trivia} instance
+     * @return The {@link Trivia} instance.
      */
     public Trivia getTrivia() {
-        return trivia;
+        return myTrivia;
     }
 }

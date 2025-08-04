@@ -6,10 +6,10 @@ package Model;
  * supports movement, state tracking, and reset
  */
 public class Maze {
-    private final Room[][] grid;
-    private final int rows, cols;
-    private final Room startRoom,exitRoom;
-    private Room currentPosition;
+    private final Room[][] myGrid;
+    private final int myRows, myCols;
+    private final Room myStartRoom, myExitRoom;
+    private Room myCurrentPosition;
 
     /**
      *
@@ -19,27 +19,26 @@ public class Maze {
      * @param cols number of colunms in maze
      * @throws IllegalArgumentException if rows and cols are less then 1
      */
-    public Maze(int rows, int cols) {
-        validateMazeDimensions(rows, cols);
-        this.rows = rows;
-        this.cols = cols;
-        grid = new Room[rows][cols];
+    public Maze(final int theRows, final int theCols) {
+        validateMazeDimensions(theRows, theCols);
+        this.myRows = theRows;
+        this.myCols = theCols;
+        myGrid = new Room[myRows][myCols];
         createRooms();
         connectDoors();
-        startRoom = grid[0][0];
-        exitRoom =  grid[rows-1][cols-1];
+        myStartRoom = myGrid[0][0];
+        myExitRoom = myGrid[myRows - 1][myCols - 1];
 
-        currentPosition = startRoom;
-        startRoom.markVisited();
-
-        }
+        myCurrentPosition = myStartRoom;
+        myStartRoom.markVisited();
+    }
 
     /**
      * Returns number of rows in maze
      * @return the row count
      */
     public int getRows() {
-        return rows;
+        return myRows;
     }
 
     /**
@@ -47,7 +46,7 @@ public class Maze {
      * @return colunm count
      */
     public int getCols() {
-        return cols;
+        return myCols;
     }
 
     /**
@@ -57,12 +56,12 @@ public class Maze {
      * @return room object at specified coordinates
      * @throws  IndexOutOfBoundsException if coordinates are outside maze bounds
      */
-    public Room getRoom(int row, int col) {
-        if (row < 0 || row >= rows || col < 0 || col >= cols) {
-            throw new IndexOutOfBoundsException("Invalid room coordinates: (" + row + ", " + col + ")");
-            }
-        return grid[row][col];
+    public Room getRoom(final int theRow, final int theCol) {
+        if (theRow < 0 || theRow >= myRows || theCol < 0 || theCol >= myCols) {
+            throw new IndexOutOfBoundsException("Invalid room coordinates: (" + theRow + ", " + theCol + ")");
         }
+        return myGrid[theRow][theCol];
+    }
 
     /**
      * This moves player from current room through door in specified direction.
@@ -70,17 +69,16 @@ public class Maze {
       * @param direction compass direction to move(NWSE)
      * @return true if move was a success, false otherewise
      */
-    public boolean move(Direction direction) {
-        boolean validmove = false;
-        Door door = currentPosition.getDoor(direction);
+    public boolean move(final Direction theDirection) {
+        boolean validMove = false;
+        Door door = myCurrentPosition.getDoor(theDirection);
         if (door != null && !door.isBlocked()) {
-            Room next = door.getNextRoom(currentPosition);
-            currentPosition = next;
-            currentPosition.markVisited();
-            validmove = true;
+            Room next = door.getNextRoom(myCurrentPosition);
+            myCurrentPosition = next;
+            myCurrentPosition.markVisited();
+            validMove = true;
         }
-        return validmove;
-
+        return validMove;
     }
 
     /**
@@ -88,7 +86,7 @@ public class Maze {
      * @return current room of player
      */
     public Room getCurrentRoom() {
-        return currentPosition;
+        return myCurrentPosition;
     }
 
     /**
@@ -96,20 +94,20 @@ public class Maze {
      * @return true if player at exit room, false otherwise
      */
     public boolean isAtExit() {
-        return currentPosition == exitRoom;
+        return myCurrentPosition == myExitRoom;
     }
 
     /**
      * Resets maze to starting point, player back at start point and all rooms marked unvisited
      */
     public void reset() {
-        currentPosition = startRoom;
-        for (Room[] row : grid) {
-            for (Room room : row) {
+        myCurrentPosition = myStartRoom;
+        for (final Room[] row : myGrid) {
+            for (final Room room : row) {
                 room.clearVisited();
             }
         }
-        startRoom.markVisited();
+        myStartRoom.markVisited();
     }
 
     /**
@@ -117,9 +115,9 @@ public class Maze {
      *
      * @throws  IllegalArgumentException if row or colunm less than 1
      */
-    private void validateMazeDimensions(int r, int c) {
-        if (r < 1 || c < 1) {
-            throw new IllegalArgumentException(" rows/cols must be greater than 1");
+    private void validateMazeDimensions(final int theR, final int theC) {
+        if (theR < 1 || theC < 1) {
+            throw new IllegalArgumentException("Rows and columns must be greater than or equal to 1.");
         }
     }
 
@@ -127,39 +125,33 @@ public class Maze {
      * This instantiates and storing room objects into grid
      */
     private void createRooms() {
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                grid[r][c] = new Room(r, c);
+        for (int r = 0; r < myRows; r++) {
+            for (int c = 0; c < myCols; c++) {
+                myGrid[r][c] = new Room(r, c);
             }
         }
-
     }
 
     /**
-     * This connects every pair of adjacent rooms
+     * Connects every pair of adjacent rooms with doors.
      */
     private void connectDoors() {
-        for (int r = 0; r < rows; r++) {
-            for (int c = 0; c < cols; c++) {
-                Room room = grid[r][c];
+        for (int r = 0; r < myRows; r++) {
+            for (int c = 0; c < myCols; c++) {
+                final Room room = myGrid[r][c];
+                // Connect to the room above (North)
                 if (r > 0) {
-                    Door nsDoor = new Door(room, grid[r - 1][c], null);
+                    final Door nsDoor = new Door(room, myGrid[r - 1][c], null);
                     room.setDoor(Direction.NORTH, nsDoor);
-                    grid[r - 1][c].setDoor(Direction.SOUTH, nsDoor);
+                    myGrid[r - 1][c].setDoor(Direction.SOUTH, nsDoor);
                 }
+                // Connect to the room to the left (West)
                 if (c > 0) {
-                    Door weDoor = new Door(room, grid[r][c - 1], null);
+                    final Door weDoor = new Door(room, myGrid[r][c - 1], null);
                     room.setDoor(Direction.WEST, weDoor);
-                    grid[r][c - 1].setDoor(Direction.EAST, weDoor);
+                    myGrid[r][c - 1].setDoor(Direction.EAST, weDoor);
                 }
             }
         }
-
     }
-
-
-
-
-
-
 }
