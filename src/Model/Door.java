@@ -1,9 +1,13 @@
 package Model;
 
+import java.io.Serializable;
+
 /**
  * This represents a door connecting two rooms.
  */
-public class Door {
+public class Door implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final Room roomA;
     private final Room roomB;
     private final Question question;

@@ -1,11 +1,15 @@
 package Model;
 
+import java.io.Serializable;
+
 /**
  *
  * Represents rectangular grid composed of rooms connected by doors making up trivia maze
  * supports movement, state tracking, and reset
  */
-public class Maze {
+public class Maze implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final Room[][] myGrid;
     private final int myRows, myCols;
     private final Room myStartRoom, myExitRoom;
@@ -66,7 +70,7 @@ public class Maze {
     /**
      * This moves player from current room through door in specified direction.
      * If no door exists it remains blocked and the player does not move.
-      * @param direction compass direction to move(NWSE)
+     * @param direction compass direction to move(NWSE)
      * @return true if move was a success, false otherewise
      */
     public boolean move(final Direction theDirection) {

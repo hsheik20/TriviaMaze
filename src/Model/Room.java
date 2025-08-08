@@ -1,5 +1,6 @@
 package Model;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
@@ -8,7 +9,9 @@ import java.util.Set;
 /**
  * This represents a room, a cell in trivia maze. It looks which doors lead out to other doors in each of 4 directions.
  */
-public class Room {
+public class Room implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     private final int row;
     private final int col;
     private boolean visited = false;
@@ -45,7 +48,7 @@ public class Room {
     }
 
     public boolean isVisited() {
-      return visited;
+        return visited;
     }
 
     /**
@@ -94,9 +97,4 @@ public class Room {
     public Set<Direction> getAvailableDirections() {
         return Set.copyOf(doors.keySet());
     }
-
-
-
-
-
 }

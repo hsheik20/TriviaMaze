@@ -1,5 +1,7 @@
 package Model;
 
+import java.io.Serializable;
+
 /**
  * The {@code Player} class represents a player in the Trivia Maze game.
  * It maintains the player's logical position (coordinates), score, and the number
@@ -11,7 +13,9 @@ package Model;
  *
  * @author Husein & Chan
  */
-public class Player {
+public class Player implements Serializable {
+    private static final long serialVersionUID = 1L;
+
     /** X-coordinate (row) of the player's position in the maze. */
     private int myX;
     /** Y-coordinate (column) of the player's position in the maze. */
