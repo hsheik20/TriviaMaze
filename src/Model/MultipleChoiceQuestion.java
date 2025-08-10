@@ -1,5 +1,4 @@
 package Model;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -7,28 +6,28 @@ import java.util.List;
  * and checks the player's choice by index
  */
 public class MultipleChoiceQuestion extends Question {
-    private final List<String> options;
-    private final int correctIndex;
+    private final List<String> myOptions;
+    private final int myCorrectIndex;
 
     /**
      * This constructs a new multiple choice question
-     * @param prompt the text of question
-     * @param options the list of answer choices
-     * @param correctIndex the index of correct answer
-     * @param hint the optional hint to display to player
+     * @param thePrompt the text of question
+     * @param theOptions the list of answer choices
+     * @param theCorrectIndex the index of correct answer
+     * @param theHint optional hint to display to player
      * @throws IllegalArgumentException if index out of bounds
      */
-    public MultipleChoiceQuestion(String prompt, List<String> options, int correctIndex, Hint hint) {
-        super(prompt, hint);
-        this.options = options;
-        this.correctIndex = correctIndex;
+    public MultipleChoiceQuestion(final String thePrompt, final List<String> theOptions, final int theCorrectIndex, final Hint theHint) {
+        super(thePrompt, theHint);
+        this.myOptions = theOptions;
+        this.myCorrectIndex = theCorrectIndex;
     }
 
     /**
      * This returns view of all the answer options
      */
     public List<String> getOptions() {
-        return options;
+        return myOptions;
     }
 
     /**
@@ -40,10 +39,10 @@ public class MultipleChoiceQuestion extends Question {
     public boolean isCorrect(String answer) {
         try{
             int ansIndex = Integer.parseInt(answer);
-            if (ansIndex < 0 || ansIndex > options.size()) {
+            if (ansIndex < 0 || ansIndex > myOptions.size()) {
                 throw new IllegalArgumentException("Invalid index option for answer");
             }
-            return ansIndex == correctIndex;
+            return ansIndex == myCorrectIndex;
         } catch (NumberFormatException e) {
     return false;
         }
@@ -54,7 +53,7 @@ public class MultipleChoiceQuestion extends Question {
      */
     @Override
     public String getCorrectAnswer() {
-        return options.get(correctIndex);
+        return myOptions.get(myCorrectIndex);
     }
 
 }
