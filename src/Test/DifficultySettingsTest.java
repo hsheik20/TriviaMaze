@@ -39,8 +39,6 @@ public class DifficultySettingsTest {
             assertEquals("Test Difficulty", settings.getDifficultyName());
             assertEquals(8, settings.getMazeWidth());
             assertEquals(6, settings.getMazeHeight());
-            assertEquals(0.3, settings.getWallDensity(), 0.001);
-            assertEquals(0.3, settings.getDoorDensity(), 0.001);
             assertEquals(0, settings.getTimeLimit());
             assertEquals(3, settings.getMaxHints());
             assertEquals(10, settings.getCorrectAnswerPoints());
@@ -68,50 +66,6 @@ public class DifficultySettingsTest {
             // Assert
             assertEquals(10, settings.getMazeWidth());
             assertEquals(8, settings.getMazeHeight());
-        }
-
-        @Test
-        @DisplayName("Should set wall density with clamping")
-        void testWallDensity() {
-            // Test normal value
-            DifficultySettings settings1 = builder
-                    .wallDensity(0.5)
-                    .build();
-            assertEquals(0.5, settings1.getWallDensity(), 0.001);
-
-            // Test clamping upper bound
-            DifficultySettings settings2 = new DifficultySettings.Builder("Test2")
-                    .wallDensity(1.5)
-                    .build();
-            assertEquals(1.0, settings2.getWallDensity(), 0.001);
-
-            // Test clamping lower bound
-            DifficultySettings settings3 = new DifficultySettings.Builder("Test3")
-                    .wallDensity(-0.5)
-                    .build();
-            assertEquals(0.0, settings3.getWallDensity(), 0.001);
-        }
-
-        @Test
-        @DisplayName("Should set door density with clamping")
-        void testDoorDensity() {
-            // Test normal value
-            DifficultySettings settings1 = builder
-                    .doorDensity(0.4)
-                    .build();
-            assertEquals(0.4, settings1.getDoorDensity(), 0.001);
-
-            // Test clamping upper bound
-            DifficultySettings settings2 = new DifficultySettings.Builder("Test2")
-                    .doorDensity(2.0)
-                    .build();
-            assertEquals(1.0, settings2.getDoorDensity(), 0.001);
-
-            // Test clamping lower bound
-            DifficultySettings settings3 = new DifficultySettings.Builder("Test3")
-                    .doorDensity(-1.0)
-                    .build();
-            assertEquals(0.0, settings3.getDoorDensity(), 0.001);
         }
 
         @Test
@@ -315,8 +269,6 @@ public class DifficultySettingsTest {
             // Act
             DifficultySettings settings = new DifficultySettings.Builder("Chained Test")
                     .mazeSize(12, 10)
-                    .wallDensity(0.4)
-                    .doorDensity(0.3)
                     .timeLimit(45)
                     .maxHints(2)
                     .scoring(8, 6, 7, 12)
@@ -328,8 +280,6 @@ public class DifficultySettingsTest {
             assertEquals("Chained Test", settings.getDifficultyName());
             assertEquals(12, settings.getMazeWidth());
             assertEquals(10, settings.getMazeHeight());
-            assertEquals(0.4, settings.getWallDensity(), 0.001);
-            assertEquals(0.3, settings.getDoorDensity(), 0.001);
             assertEquals(45, settings.getTimeLimit());
             assertEquals(2, settings.getMaxHints());
             assertEquals(8, settings.getCorrectAnswerPoints());
@@ -368,8 +318,6 @@ public class DifficultySettingsTest {
             // Act
             DifficultySettings settings = builder
                     .mazeSize(10, 8)
-                    .wallDensity(0.4)
-                    .doorDensity(0.3)
                     .build();
 
             String result = settings.toString();
