@@ -24,13 +24,12 @@ public final class DifficultyPresets {
      */
     public static DifficultySettings easy() {
         return new DifficultySettings.Builder("Easy")
-                .mazeSize(6, 5)
-                .wallDensity(0.2)
-                .doorDensity(0.2)
+                .mazeSize(3, 3)
                 .timeLimit(0) // no time limit
                 .maxHints(5)
                 .scoring(15, 3, 3, 5)
                 .allowSkipping(true)
+                .maxAttemptsPerDoor(3)
                 .questionDifficultyRange(1, 2)
                 .build();
     }
@@ -43,13 +42,12 @@ public final class DifficultyPresets {
      */
     public static DifficultySettings normal() {
         return new DifficultySettings.Builder("Normal")
-                .mazeSize(8, 6)
-                .wallDensity(0.3)
-                .doorDensity(0.3)
+                .mazeSize(4, 4)
                 .timeLimit(60) // 1 minute per question
                 .maxHints(3)
                 .scoring(10, 5, 5, 10)
                 .allowSkipping(true)
+                .maxAttemptsPerDoor(2)
                 .questionDifficultyRange(1, 3)
                 .build();
     }
@@ -62,35 +60,16 @@ public final class DifficultyPresets {
      */
     public static DifficultySettings hard() {
         return new DifficultySettings.Builder("Hard")
-                .mazeSize(10, 8)
-                .wallDensity(0.4)
-                .doorDensity(0.4)
+                .mazeSize(5, 5)
                 .timeLimit(45) // 45 seconds per question
                 .maxHints(2)
                 .scoring(8, 7, 8, 15)
                 .allowSkipping(true)
+                .maxAttemptsPerDoor(1)
                 .questionDifficultyRange(2, 4)
                 .build();
     }
 
-    /**
-     * Creates an expert difficulty setting.
-     * Features: Very large maze, tight time limits, minimal assistance.
-     *
-     * @return DifficultySettings configured for expert gameplay.
-     */
-    public static DifficultySettings expert() {
-        return new DifficultySettings.Builder("Expert")
-                .mazeSize(12, 10)
-                .wallDensity(0.5)
-                .doorDensity(0.5)
-                .timeLimit(30) // 30 seconds per question
-                .maxHints(1)
-                .scoring(5, 10, 10, 20)
-                .allowSkipping(false)
-                .questionDifficultyRange(3, 5)
-                .build();
-    }
 
     /**
      * Creates a base custom difficulty setting.
@@ -110,7 +89,7 @@ public final class DifficultyPresets {
      */
     public static DifficultySettings[] getAllPresets() {
         return new DifficultySettings[] {
-                easy(), normal(), hard(), expert()
+                easy(), normal(), hard()
         };
     }
 }

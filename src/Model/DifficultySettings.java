@@ -20,10 +20,6 @@ public class DifficultySettings implements Serializable {
     private final int myMazeWidth;
     /** The height of the maze in cells. */
     private final int myMazeHeight;
-    /** The density of walls in the maze (0.0 to 1.0). */
-    private final double myWallDensity;
-    /** The density of doors in the maze (0.0 to 1.0). */
-    private final double myDoorDensity;
     /** Time limit per question in seconds, 0 = no limit. */
     private final int myTimeLimit;
     /** Maximum number of hints allowed per game. */
@@ -38,6 +34,8 @@ public class DifficultySettings implements Serializable {
     private final int mySkipQuestionPenalty;
     /** Whether players are allowed to skip questions. */
     private final boolean myAllowSkipping;
+    /** Allowed attempts per door. */
+    private final int myMaxAttemptsPerDoor;
     /** Minimum difficulty level for questions. */
     private final int myQuestionDifficultyMin;
     /** Maximum difficulty level for questions. */
@@ -52,8 +50,6 @@ public class DifficultySettings implements Serializable {
         myDifficultyName = theBuilder.myDifficultyName;
         myMazeWidth = theBuilder.myMazeWidth;
         myMazeHeight = theBuilder.myMazeHeight;
-        myWallDensity = theBuilder.myWallDensity;
-        myDoorDensity = theBuilder.myDoorDensity;
         myTimeLimit = theBuilder.myTimeLimit;
         myMaxHints = theBuilder.myMaxHints;
         myCorrectAnswerPoints = theBuilder.myCorrectAnswerPoints;
@@ -61,6 +57,7 @@ public class DifficultySettings implements Serializable {
         myHintPenalty = theBuilder.myHintPenalty;
         mySkipQuestionPenalty = theBuilder.mySkipQuestionPenalty;
         myAllowSkipping = theBuilder.myAllowSkipping;
+        myMaxAttemptsPerDoor    = theBuilder.myMaxAttemptsPerDoor;
         myQuestionDifficultyMin = theBuilder.myQuestionDifficultyMin;
         myQuestionDifficultyMax = theBuilder.myQuestionDifficultyMax;
     }
@@ -83,18 +80,6 @@ public class DifficultySettings implements Serializable {
      * @return The maze height in cells.
      */
     public int getMazeHeight() { return myMazeHeight; }
-
-    /**
-     * Gets the wall density.
-     * @return The wall density (0.0 to 1.0).
-     */
-    public double getWallDensity() { return myWallDensity; }
-
-    /**
-     * Gets the door density.
-     * @return The door density (0.0 to 1.0).
-     */
-    public double getDoorDensity() { return myDoorDensity; }
 
     /**
      * Gets the time limit per question.
@@ -137,6 +122,10 @@ public class DifficultySettings implements Serializable {
      * @return True if skipping is allowed.
      */
     public boolean isAllowSkipping() { return myAllowSkipping; }
+    /**
+     * this fetches max attempts per door.
+     */
+    public int getMaxAttemptsPerDoor()     { return myMaxAttemptsPerDoor; }
 
     /**
      * Gets minimum question difficulty.
@@ -158,10 +147,17 @@ public class DifficultySettings implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Difficulty: %s (Maze: %dx%d, Walls: %.0f%%, Doors: %.0f%%)",
-                myDifficultyName, myMazeWidth, myMazeHeight,
-                myWallDensity * 100, myDoorDensity * 100);
+        return String.format(
+                "Difficulty: %s (Maze %dx%d, Hints %s, Skips %s, Attempts/door %s, +%d/-%d)",
+                myDifficultyName,
+                myMazeWidth, myMazeHeight,
+                (myMaxHints == 0 ? "∞" : String.valueOf(myMaxHints)),
+                myAllowSkipping ? "Yes" : "No",
+                (myMaxAttemptsPerDoor == 0 ? "∞" : String.valueOf(myMaxAttemptsPerDoor)),
+                myCorrectAnswerPoints, myWrongAnswerPenalty
+        );
     }
+
 
     /**
      * Builder class for creating DifficultySettings instances.
@@ -177,10 +173,6 @@ public class DifficultySettings implements Serializable {
         private int myMazeWidth = 8;
         /** Default maze height. */
         private int myMazeHeight = 6;
-        /** Default wall density. */
-        private double myWallDensity = 0.3;
-        /** Default door density. */
-        private double myDoorDensity = 0.3;
         /** Default time limit (no limit). */
         private int myTimeLimit = 0;
         /** Default maximum hints. */
@@ -195,6 +187,8 @@ public class DifficultySettings implements Serializable {
         private int mySkipQuestionPenalty = 10;
         /** Default skipping allowance. */
         private boolean myAllowSkipping = true;
+        /** Default max attempts per door. */
+        private int myMaxAttemptsPerDoor = 1;
         /** Default minimum question difficulty. */
         private int myQuestionDifficultyMin = 1;
         /** Default maximum question difficulty. */
@@ -219,28 +213,6 @@ public class DifficultySettings implements Serializable {
         public Builder mazeSize(final int theWidth, final int theHeight) {
             myMazeWidth = theWidth;
             myMazeHeight = theHeight;
-            return this;
-        }
-
-        /**
-         * Sets the wall density.
-         *
-         * @param theDensity The wall density (0.0 to 1.0).
-         * @return This builder instance for method chaining.
-         */
-        public Builder wallDensity(final double theDensity) {
-            myWallDensity = Math.max(0.0, Math.min(1.0, theDensity));
-            return this;
-        }
-
-        /**
-         * Sets the door density.
-         *
-         * @param theDensity The door density (0.0 to 1.0).
-         * @return This builder instance for method chaining.
-         */
-        public Builder doorDensity(final double theDensity) {
-            myDoorDensity = Math.max(0.0, Math.min(1.0, theDensity));
             return this;
         }
 
@@ -294,7 +266,15 @@ public class DifficultySettings implements Serializable {
             myAllowSkipping = theAllow;
             return this;
         }
-
+        /**
+         * Sets max attempts of specific door.
+         *
+         * @param theAttempts the number of attempts allowed for door.
+         * @return This builder instance for method chaining.
+         */
+        public Builder maxAttemptsPerDoor(final int theAttempts) {
+            myMaxAttemptsPerDoor = Math.max(0, theAttempts); return this;
+        }
         /**
          * Sets the question difficulty range.
          *

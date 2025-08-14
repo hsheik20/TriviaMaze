@@ -1,5 +1,6 @@
 package Model;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -14,6 +15,7 @@ import java.io.Serializable;
  * @author Husein & Chan
  */
 public class Player implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     /** X-coordinate (row) of the player's position in the maze. */
@@ -62,7 +64,7 @@ public class Player implements Serializable {
             throw new IllegalArgumentException("The maze object cannot be null for player movement.");
         }
 
-        final boolean moveSuccessful = theMaze.move(theDirection);
+        final boolean moveSuccessful = theMaze.canMove(theDirection);
         if (moveSuccessful) {
             // Update player's internal coordinates to match the maze's current room
             myX = theMaze.getCurrentRoom().getRow();

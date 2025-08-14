@@ -1,81 +1,126 @@
 package Model;
+
 import java.sql.*;
-import java.util.List;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
- * This represents a factory for loading trivia questions from SQLite Database.
- * This supports a variety of question types: True/false, multiple choice, and fill in the blank
+ * Factory to preload and serve trivia questions of various types from SQLite.
+ * Supports: Multiple Choice (MC), True/False (TF), and Fill in the Blank (FB).
  */
-
 public class questionFactory {
-    /**
-     * path pointing to SQLite file containing all trivia questions
-     */
-    private static final String DB_PATH = "jdbc:sqlite:lib/trivia.db";
 
-    /**
-     * This loads a random question of a specifc type from DB
-     * @param type the type of question: TF, MC, FB
-     * @return an instance loaded with question prompt, correct answer, a hint, or null if no question of type exists
-     */
-    public static Question createQuestion(String type) {
-        String query = "SELECT * FROM questions WHERE type = ? ORDER BY RANDOM() LIMIT 1";
+    private final String dbPath;
+    private final Random random = new Random();
+    private final Map<String, Queue<Question>> questionsByType = new HashMap<>();
 
-        try (Connection conn = DriverManager.getConnection(DB_PATH);
-             PreparedStatement stmt = conn.prepareStatement(query)) {
+    public questionFactory(final String theDbPath) {
+        this.dbPath = theDbPath;
+        preloadQuestions();
+    }
 
-            stmt.setString(1, type);
-            ResultSet rs = stmt.executeQuery();
+    private void preloadQuestions() {
+        String query = "SELECT * FROM questions";
 
-            if (rs.next()) {
+        try (Connection conn = DriverManager.getConnection(dbPath);
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                String type = rs.getString("type").trim().toUpperCase();
                 String prompt = rs.getString("question");
                 String correct = rs.getString("correct_answer");
+                int id = rs.getInt("id");
 
-                // Optional: You can retrieve a hint string and convert it to a Hint object if needed
-                Hint hint = new Hint("This is a placeholder hint!"); // Update when hints are in DB
+                List<String> hints = getHintsForQuestion(id);
+                Hint hint = hints.isEmpty() ? null : new Hint(hints.get(0));
 
-                switch (type) {
-                    case "TF":
-                        boolean tfAnswer = Boolean.parseBoolean(correct);
-                        return new TrueFalseQuestion(prompt, tfAnswer, hint);
+                Question question = switch (type) {
+                    case "TF" -> new TrueFalseQuestion(prompt, Boolean.parseBoolean(correct), hint);
+                    case "MC" -> {
+                        List<String> options = List.of(
+                                rs.getString("option_a"),
+                                rs.getString("option_b"),
+                                rs.getString("option_c"),
+                                rs.getString("option_d")
+                        );
+                        int correctIndex = correct.trim().toUpperCase().charAt(0) - 'A';
+                        yield new MultipleChoiceQuestion(prompt, options, correctIndex, hint);
+                    }
+                    case "FB" -> new FillInTheBlank(prompt, correct, hint);
+                    default -> null;
+                };
 
-                    case "MC":
-                        List<String> options = new ArrayList<>();
-                        options.add(rs.getString("option_a"));
-                        options.add(rs.getString("option_b"));
-                        options.add(rs.getString("option_c"));
-                        options.add(rs.getString("option_d"));
-                        int correctIndex = Integer.parseInt(correct);  // Assuming correct_answer stores index (e.g. "2")
-                        return new MultipleChoiceQuestion(prompt, options, correctIndex, hint);
-
-                    case "FB":
-                        return new FillInTheBlank(prompt, correct, hint);
+                if (question != null) {
+                    questionsByType
+                            .computeIfAbsent(type, k -> new LinkedList<>())
+                            .add(question);
                 }
             }
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            // Shuffle each queue
+            for (Map.Entry<String, Queue<Question>> entry : questionsByType.entrySet()) {
+                List<Question> shuffled = new ArrayList<>(entry.getValue());
+                Collections.shuffle(shuffled, random);
+                entry.setValue(new LinkedList<>(shuffled));
+            }
 
-        return null; // fallback if no question or error occurs
+        } catch (SQLException e) {
+            System.err.println("❌ Error preloading questions: " + e.getMessage());
+        }
     }
 
     /**
-     * Test to check that the DB connection was working and it did contain all questions
+     * Returns the next available question (of any type), ensuring no repeats.
      */
-    public static void testConnection() {
-        try (Connection conn = DriverManager.getConnection(DB_PATH)) {
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM questions;");
-            if (rs.next()) {
-                System.out.println("Question count: " + rs.getInt(1));
+    public Question getNextAvailableQuestion() {
+        List<String> availableTypes = questionsByType.entrySet().stream()
+                .filter(e -> !e.getValue().isEmpty())
+                .map(Map.Entry::getKey)
+                .toList();
+
+        if (availableTypes.isEmpty()) return null;
+
+        String randomType = availableTypes.get(random.nextInt(availableTypes.size()));
+        return questionsByType.get(randomType).poll();
+    }
+
+    /**
+     * Loads all hints for a question ID.
+     * @param questionId ID in the database
+     * @return list of hint strings
+     */
+    private List<String> getHintsForQuestion(int questionId) {
+        List<String> hints = new ArrayList<>();
+        String sql = "SELECT hint_text FROM hints WHERE question_id = ?";
+
+        try (Connection conn = DriverManager.getConnection(dbPath);
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, questionId);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                hints.add(rs.getString("hint_text"));
             }
+
         } catch (SQLException e) {
+            System.err.println("❌ Error loading hints: " + e.getMessage());
+        }
+
+        return hints;
+    }
+    public static void main(String[] args) {
+        try (Connection conn = DriverManager.getConnection("jdbc:sqlite:lib/trivia(1).db")) {
+            ResultSet rs = conn.createStatement().executeQuery(
+                    "SELECT name FROM sqlite_master WHERE type='table';"
+            );
+            System.out.println("Tables found:");
+            while (rs.next()) {
+                System.out.println("- " + rs.getString("name"));
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    public static void main(String[] args) {
-        questionFactory.testConnection();
-    }
+
 }
