@@ -1,444 +1,380 @@
-package Model; // Assuming Game is part of the Model package, adjust if it's in a different package like View or Controller.
+package Model;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*; // Although not directly used in the provided snippet, often needed for UI.
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
+import java.io.Serial;
+import java.io.Serializable;
+import java.util.Objects;
 
 /**
- * The {@code Game} class represents the main window for the Trivia Maze Game.
- * It sets up the user interface, initializes game states, and launches the application.
- * This class extends {@link JFrame} and serves as the entry point of the game.
- *
- * Responsibilities include:
- *
- * Initializing the main window and its core components.
- * Managing game state transitions through a {@link GameStateManager}.
- * Setting the system's look and feel for consistent UI design.
- * Managing difficulty settings and providing UI for difficulty selection.
+ * This represents main game logic for Trivia Maze.
+ * Manages maze, player state, game state, coordinate changes, questions, difficulty settings,
+ * and winning and losing conditions.
  *
  * @author Husein & Chan
  */
-public class Game extends JFrame { // Explicitly extend JFrame
-    /** Manages the various game states and transitions between them. */
-    private GameStateManager myGameStateManager;
-    /** Represents the top menu bar of the application. */
-    private JMenuBar myMenuBar; // Changed to JMenuBar for Swing components
-    /** The main content panel where UI components are placed. */
-    private JPanel myContentPanel;
-    /** The current difficulty settings for the game. */
-    private DifficultySettings myCurrentDifficulty;
-    /** Panel for difficulty selection UI. */
-    private JPanel myDifficultySelectionPanel;
+public class Game implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    /** Manages event notifications for listeners. */
+    private transient PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+    /** Maze layout and doors/questions. */
+    private final Maze myMaze;
+    /** Player character and their stats. */
+    private final Player myPlayer;
+    /** Manages current game state. */
+    private final GameStateManager myGSM;
+    /** Current difficulty settings for the game. */
+    private DifficultySettings myDifficultySettings;
+    /** Number of hints used in the current game. */
+    private int myHintsUsed;
+    /** Flag indicating if the game has been initialized with difficulty. */
+    private boolean myDifficultyInitialized;
 
     /**
-     * The default width of the game window.
-     */
-    private static final int DEFAULT_WIDTH = 1200;
-    /**
-     * The default height of the game window.
-     */
-    private static final int DEFAULT_HEIGHT = 800;
-    /**
-     * The title of the game window.
-     */
-    private static final String GAME_TITLE = "Trivia Maze Game";
-
-    /**
-     * Constructs a new {@code Game} instance.
-     * Sets up the window properties and initializes game components.
-     */
-    public Game() {
-        // Set window properties
-        super(GAME_TITLE); // Call JFrame constructor with title
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
-        this.setLocationRelativeTo(null); // Center the window on screen
-
-        // Initialize default difficulty
-        myCurrentDifficulty = DifficultyPresets.normal();
-
-        // Initialize game state manager
-        // Pass 'this' (the Game instance) to the GameStateManager if it needs to interact with the JFrame.
-        myGameStateManager = new GameStateManager(this);
-
-        initializeComponents();
-
-        // Start with difficulty selection state
-        myGameStateManager.setState(new DifficultySelectionState());
-    }
-
-    /**
-     * Initializes the main UI components of the game window, such as the menu bar
-     * and the content panel.
-     */
-    private void initializeComponents() {
-        // Initialize the menu bar
-        myMenuBar = new JMenuBar();
-        createMenuBar();
-        this.setJMenuBar(myMenuBar);
-
-        // Initialize the main content panel
-        myContentPanel = new JPanel();
-        myContentPanel.setLayout(new BorderLayout());
-        this.add(myContentPanel);
-
-        // Initialize difficulty selection panel
-        createDifficultySelectionPanel();
-
-        // Show difficulty selection by default
-        showDifficultySelection();
-    }
-
-    /**
-     * Creates the menu bar with difficulty and game options.
-     */
-    private void createMenuBar() {
-        // Game menu
-        JMenu gameMenu = new JMenu("Game");
-
-        JMenuItem newGameItem = new JMenuItem("New Game");
-        newGameItem.addActionListener(theEvent -> startNewGame());
-        gameMenu.add(newGameItem);
-
-        gameMenu.addSeparator();
-
-        JMenuItem exitItem = new JMenuItem("Exit");
-        exitItem.addActionListener(theEvent -> System.exit(0));
-        gameMenu.add(exitItem);
-
-        myMenuBar.add(gameMenu);
-
-        // Difficulty menu
-        JMenu difficultyMenu = new JMenu("Difficulty");
-
-        // Add preset difficulties
-        JMenuItem easyItem = new JMenuItem("Easy");
-        easyItem.addActionListener(theEvent -> setDifficulty(DifficultyPresets.easy()));
-        difficultyMenu.add(easyItem);
-
-        JMenuItem normalItem = new JMenuItem("Normal");
-        normalItem.addActionListener(theEvent -> setDifficulty(DifficultyPresets.normal()));
-        difficultyMenu.add(normalItem);
-
-        JMenuItem hardItem = new JMenuItem("Hard");
-        hardItem.addActionListener(theEvent -> setDifficulty(DifficultyPresets.hard()));
-        difficultyMenu.add(hardItem);
-
-        JMenuItem expertItem = new JMenuItem("Expert");
-        expertItem.addActionListener(theEvent -> setDifficulty(DifficultyPresets.expert()));
-        difficultyMenu.add(expertItem);
-
-        difficultyMenu.addSeparator();
-
-        JMenuItem customItem = new JMenuItem("Custom Settings...");
-        customItem.addActionListener(theEvent -> showCustomDifficultyDialog());
-        difficultyMenu.add(customItem);
-
-        JMenuItem selectDifficultyItem = new JMenuItem("Select Difficulty...");
-        selectDifficultyItem.addActionListener(theEvent -> showDifficultySelection());
-        difficultyMenu.add(selectDifficultyItem);
-
-        myMenuBar.add(difficultyMenu);
-
-        // Settings menu
-        JMenu settingsMenu = new JMenu("Settings");
-
-        JMenuItem difficultyInfoItem = new JMenuItem("Current Difficulty Info");
-        difficultyInfoItem.addActionListener(theEvent -> showDifficultyInfo());
-        settingsMenu.add(difficultyInfoItem);
-
-        myMenuBar.add(settingsMenu);
-    }
-
-    /**
-     * Creates the difficulty selection panel with preset options.
-     */
-    private void createDifficultySelectionPanel() {
-        myDifficultySelectionPanel = new JPanel(new BorderLayout());
-        myDifficultySelectionPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-
-        // Title
-        JLabel titleLabel = new JLabel("Select Difficulty Level", JLabel.CENTER);
-        titleLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
-        myDifficultySelectionPanel.add(titleLabel, BorderLayout.NORTH);
-
-        // Difficulty options panel
-        JPanel optionsPanel = new JPanel(new GridLayout(2, 2, 20, 20));
-        optionsPanel.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
-
-        // Create difficulty buttons
-        JButton easyButton = createDifficultyButton("Easy", DifficultyPresets.easy(),
-                "Small maze, no time limit, many hints");
-        JButton normalButton = createDifficultyButton("Normal", DifficultyPresets.normal(),
-                "Standard maze, moderate time limit");
-        JButton hardButton = createDifficultyButton("Hard", DifficultyPresets.hard(),
-                "Large maze, time pressure, fewer hints");
-        JButton expertButton = createDifficultyButton("Expert", DifficultyPresets.expert(),
-                "Very large maze, tight time limits, minimal assistance");
-
-        optionsPanel.add(easyButton);
-        optionsPanel.add(normalButton);
-        optionsPanel.add(hardButton);
-        optionsPanel.add(expertButton);
-
-        myDifficultySelectionPanel.add(optionsPanel, BorderLayout.CENTER);
-
-        // Current difficulty display
-        JPanel infoPanel = new JPanel(new FlowLayout());
-        JLabel currentLabel = new JLabel("Current: " + myCurrentDifficulty.toString());
-        currentLabel.setFont(new Font(Font.SANS_SERIF, Font.ITALIC, 12));
-        infoPanel.add(currentLabel);
-
-        JButton startGameButton = new JButton("Start Game");
-        startGameButton.setPreferredSize(new Dimension(120, 30));
-        startGameButton.addActionListener(theEvent -> startGameWithCurrentDifficulty());
-        infoPanel.add(startGameButton);
-
-        myDifficultySelectionPanel.add(infoPanel, BorderLayout.SOUTH);
-    }
-
-    /**
-     * Creates a difficulty selection button with description.
+     * Constructs a new Game instance with default normal difficulty.
      *
-     * @param theName The name of the difficulty level.
-     * @param theSettings The difficulty settings.
-     * @param theDescription Brief description of the difficulty.
-     * @return A configured JButton for difficulty selection.
+     * @param theMaze The maze instance holding rooms and doors.
+     * @param thePlayer The player instance holding current stats and position.
+     * @param theGSM The game state manager holding different states.
+     * @throws NullPointerException if any param is null.
      */
-    private JButton createDifficultyButton(final String theName,
-                                           final DifficultySettings theSettings,
-                                           final String theDescription) {
-        JButton button = new JButton();
-        button.setLayout(new BorderLayout());
-        button.setPreferredSize(new Dimension(250, 120));
-
-        // Name label
-        JLabel nameLabel = new JLabel(theName, JLabel.CENTER);
-        nameLabel.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 16));
-        button.add(nameLabel, BorderLayout.NORTH);
-
-        // Description label
-        JLabel descLabel = new JLabel("<html><center>" + theDescription + "</center></html>", JLabel.CENTER);
-        descLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        button.add(descLabel, BorderLayout.CENTER);
-
-        // Settings info
-        String infoText = String.format("<html><center>%dx%d maze<br/>%d hints max</center></html>",
-                theSettings.getMazeWidth(), theSettings.getMazeHeight(), theSettings.getMaxHints());
-        JLabel infoLabel = new JLabel(infoText, JLabel.CENTER);
-        infoLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
-        button.add(infoLabel, BorderLayout.SOUTH);
-
-        // Add action listener
-        button.addActionListener(theEvent -> {
-            setDifficulty(theSettings);
-            updateDifficultyDisplay();
-        });
-
-        return button;
+    public Game(final Maze theMaze, final Player thePlayer, final GameStateManager theGSM) {
+        this(theMaze, thePlayer, theGSM, DifficultyPresets.normal());
     }
 
     /**
-     * Sets the current difficulty and updates the game state manager.
+     * Constructs a new Game instance with specified difficulty.
      *
-     * @param theSettings The new difficulty settings to apply.
+     * @param theMaze The maze instance holding rooms and doors.
+     * @param thePlayer The player instance holding current stats and position.
+     * @param theGSM The game state manager holding different states.
+     * @param theDifficulty The difficulty settings to apply.
+     * @throws NullPointerException if any param is null.
      */
-    public void setDifficulty(final DifficultySettings theSettings) {
-        myCurrentDifficulty = theSettings;
-        myGameStateManager.setDifficultySettings(theSettings);
+    public Game(final Maze theMaze, final Player thePlayer, final GameStateManager theGSM,
+                final DifficultySettings theDifficulty) {
+        this.myMaze = Objects.requireNonNull(theMaze, "Maze cannot be null");
+        this.myPlayer = Objects.requireNonNull(thePlayer, "Player cannot be null");
+        this.myGSM = Objects.requireNonNull(theGSM, "GameStateManager cannot be null");
+        this.myDifficultySettings = Objects.requireNonNull(theDifficulty, "DifficultySettings cannot be null");
 
-        // Show confirmation message
-        JOptionPane.showMessageDialog(this,
-                "Difficulty set to: " + theSettings.getDifficultyName() + "\n" +
-                        theSettings.toString(),
-                "Difficulty Changed",
-                JOptionPane.INFORMATION_MESSAGE);
+        myPlayer.setX(myMaze.getCurrentRoom().getRow());
+        myPlayer.setY(myMaze.getCurrentRoom().getCol());
+        myHintsUsed = 0;
+        myDifficultyInitialized = false;
+
+        // Apply difficulty settings to game components
+        applyDifficultySettings();
     }
 
     /**
-     * Shows the difficulty selection panel.
+     * Applies the current difficulty settings to game components.
      */
-    public void showDifficultySelection() {
-        myContentPanel.removeAll();
-        myContentPanel.add(myDifficultySelectionPanel, BorderLayout.CENTER);
-        updateDifficultyDisplay();
-        myContentPanel.revalidate();
-        myContentPanel.repaint();
+    private void applyDifficultySettings() {
+        if (myDifficultySettings == null) {
+            return;
+        }
+
+        // Apply settings to GameStateManager
+        myGSM.setDifficultySettings(myDifficultySettings);
+
+        // Apply maze-related settings (assuming Maze has these methods)
+        // myMaze.applyDifficultySettings(myDifficultySettings);
+
+        // Apply player-related settings (assuming Player has these methods)
+        // myPlayer.setMaxHints(myDifficultySettings.getMaxHints());
+
+        myDifficultyInitialized = true;
+
+        // Notify listeners about difficulty change
+        pcs.firePropertyChange("difficultyChanged", null, myDifficultySettings);
     }
 
     /**
-     * Updates the difficulty display in the selection panel.
+     * Sets new difficulty settings and applies them to the game.
+     *
+     * @param theDifficulty The new difficulty settings to apply.
+     * @throws NullPointerException if difficulty is null.
      */
-    private void updateDifficultyDisplay() {
-        // Find and update the current difficulty label
-        Component[] components = myDifficultySelectionPanel.getComponents();
-        for (Component comp : components) {
-            if (comp instanceof JPanel) {
-                JPanel panel = (JPanel) comp;
-                Component[] subComponents = panel.getComponents();
-                for (Component subComp : subComponents) {
-                    if (subComp instanceof JLabel) {
-                        JLabel label = (JLabel) subComp;
-                        if (label.getText().startsWith("Current:")) {
-                            label.setText("Current: " + myCurrentDifficulty.toString());
-                            break;
-                        }
-                    }
-                }
-            }
+    public void setDifficultySettings(final DifficultySettings theDifficulty) {
+        Objects.requireNonNull(theDifficulty, "DifficultySettings cannot be null");
+
+        final DifficultySettings oldDifficulty = myDifficultySettings;
+        myDifficultySettings = theDifficulty;
+
+        applyDifficultySettings();
+
+        // Fire property change for listeners
+        pcs.firePropertyChange("difficultySettings", oldDifficulty, theDifficulty);
+    }
+
+    /**
+     * Sets difficulty using a preset difficulty level.
+     *
+     * @param thePresetName The name of the preset difficulty ("Easy", "Normal", "Hard", "Expert").
+     * @return True if the preset was found and applied, false otherwise.
+     */
+    public boolean setDifficultyByPreset(final String thePresetName) {
+        final DifficultySettings preset = getPresetByName(thePresetName);
+        if (preset != null) {
+            setDifficultySettings(preset);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets a preset difficulty by name.
+     *
+     * @param thePresetName The name of the preset difficulty.
+     * @return The DifficultySettings for the preset, or null if not found.
+     */
+    private DifficultySettings getPresetByName(final String thePresetName) {
+        if (thePresetName == null) {
+            return null;
+        }
+
+        switch (thePresetName.toLowerCase()) {
+            case "easy":
+                return DifficultyPresets.easy();
+            case "normal":
+                return DifficultyPresets.normal();
+            case "hard":
+                return DifficultyPresets.hard();
+            case "expert":
+                return DifficultyPresets.expert();
+            default:
+                return null;
         }
     }
 
     /**
-     * Shows a dialog with detailed information about the current difficulty.
+     * Attempts to move player in given direction.
+     * If door exists, an event is triggered to ask question.
+     *
+     * @param theDir The direction player attempts to move.
      */
-    private void showDifficultyInfo() {
-        String info = String.format(
-                "Current Difficulty: %s\n\n" +
-                        "Maze Size: %dx%d\n" +
-                        "Wall Density: %.0f%%\n" +
-                        "Door Density: %.0f%%\n" +
-                        "Time Limit: %s\n" +
-                        "Max Hints: %d\n" +
-                        "Correct Answer Points: %d\n" +
-                        "Wrong Answer Penalty: %d\n" +
-                        "Hint Penalty: %d\n" +
-                        "Skip Question Penalty: %d\n" +
-                        "Allow Skipping: %s\n" +
-                        "Question Difficulty Range: %d-%d",
-                myCurrentDifficulty.getDifficultyName(),
-                myCurrentDifficulty.getMazeWidth(),
-                myCurrentDifficulty.getMazeHeight(),
-                myCurrentDifficulty.getWallDensity() * 100,
-                myCurrentDifficulty.getDoorDensity() * 100,
-                myCurrentDifficulty.hasTimeLimit() ? myCurrentDifficulty.getTimeLimit() + " seconds" : "None",
-                myCurrentDifficulty.getMaxHints(),
-                myCurrentDifficulty.getCorrectAnswerPoints(),
-                myCurrentDifficulty.getWrongAnswerPenalty(),
-                myCurrentDifficulty.getHintPenalty(),
-                myCurrentDifficulty.getSkipQuestionPenalty(),
-                myCurrentDifficulty.isAllowSkipping() ? "Yes" : "No",
-                myCurrentDifficulty.getQuestionDifficultyMin(),
-                myCurrentDifficulty.getQuestionDifficultyMax()
+    public void attemptMove(final Direction theDir) {
+        if (myGSM.get() != GameState.PLAYING) return;
+
+        final Door door = myMaze.getDoor(theDir);
+        if (door == null || door.isBlocked()) return;
+
+        final Question q = door.getQuestion();
+        pcs.firePropertyChange("askQuestion", null, new QuestionRequest(door, q));
+    }
+
+    /**
+     * This handles player's answer to question. Updates door status,
+     * player position, and game state changes based on difficulty settings.
+     *
+     * @param theDoor The door associated with question.
+     * @param theCorrect Checks whether player's answer was correct.
+     */
+    public void handleAnswer(final Door theDoor, final boolean theCorrect) {
+        myPlayer.incrementQuestionsAnswered();
+
+        if (!theCorrect) {
+            theDoor.block();
+
+            // Apply wrong answer penalty based on difficulty
+            final int penalty = myDifficultySettings.getWrongAnswerPenalty();
+            myPlayer.addScore(-penalty);
+
+            pcs.firePropertyChange("doorBlocked", null, theDoor);
+            pcs.firePropertyChange("scoreChanged", null, myPlayer.getScore());
+
+            if (!myMaze.hasPathToExitFromCurrent()) {
+                myGSM.gameOver();
+            }
+            return;
+        }
+
+        // Figure out which direction this door is relative to current room
+        final Direction stepDir = directionOfDoorFromCurrent(theDoor);
+        final Room before = myMaze.getCurrentRoom();
+        final Room after = myMaze.step(stepDir);
+
+        // Update player position and points based on difficulty
+        myPlayer.setX(after.getRow());
+        myPlayer.setY(after.getCol());
+        final int points = myDifficultySettings.getCorrectAnswerPoints();
+        myPlayer.addScore(points);
+
+        pcs.firePropertyChange("playerMoved", before, after);
+        pcs.firePropertyChange("scoreChanged", null, myPlayer.getScore());
+
+        if (myMaze.isAtExit()) {
+            myGSM.gameOver(); // if you add a WIN state later, set that instead
+        }
+    }
+
+    /**
+     * Uses a hint if available based on difficulty settings.
+     *
+     * @return True if hint was used successfully, false if no hints available.
+     */
+    public boolean useHint() {
+        if (!areHintsAvailable()) {
+            return false;
+        }
+
+        myHintsUsed++;
+        final int penalty = myDifficultySettings.getHintPenalty();
+        myPlayer.addScore(-penalty);
+
+        pcs.firePropertyChange("hintUsed", null, myHintsUsed);
+        pcs.firePropertyChange("scoreChanged", null, myPlayer.getScore());
+
+        return true;
+    }
+
+    /**
+     * Skips the current question if allowed by difficulty settings.
+     *
+     * @param theDoor The door associated with the question being skipped.
+     * @return True if skip was successful, false if skipping not allowed.
+     */
+    public boolean skipQuestion(final Door theDoor) {
+        if (!myDifficultySettings.isAllowSkipping()) {
+            return false;
+        }
+
+        final int penalty = myDifficultySettings.getSkipQuestionPenalty();
+        myPlayer.addScore(-penalty);
+
+        // Block the door since question wasn't answered
+        theDoor.block();
+
+        pcs.firePropertyChange("questionSkipped", null, theDoor);
+        pcs.firePropertyChange("scoreChanged", null, myPlayer.getScore());
+
+        // Check if game is still winnable
+        if (!myMaze.hasPathToExitFromCurrent()) {
+            myGSM.gameOver();
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if hints are still available based on difficulty settings.
+     *
+     * @return True if hints are available, false otherwise.
+     */
+    public boolean areHintsAvailable() {
+        return myHintsUsed < myDifficultySettings.getMaxHints();
+    }
+
+    /**
+     * Gets the number of hints remaining.
+     *
+     * @return The number of hints remaining.
+     */
+    public int getHintsRemaining() {
+        return Math.max(0, myDifficultySettings.getMaxHints() - myHintsUsed);
+    }
+
+    /**
+     * Determines direction of given door relative to current room.
+     *
+     * @param door The door to locate.
+     * @return Direction of door.
+     * @throws IllegalStateException if door is not connected to current room.
+     */
+    private Direction directionOfDoorFromCurrent(final Door door) {
+        final Room cur = myMaze.getCurrentRoom();
+        for (final Direction d : Direction.values()) {
+            if (cur.getDoor(d) == door) return d;
+        }
+        throw new IllegalStateException("Door is not connected to the current room.");
+    }
+
+    /**
+     * Gets information about all available difficulty presets.
+     *
+     * @return Array of all available difficulty presets.
+     */
+    public DifficultySettings[] getAvailablePresets() {
+        return DifficultyPresets.getAllPresets();
+    }
+
+    /**
+     * Gets a summary of the current difficulty settings.
+     *
+     * @return A formatted string describing the current difficulty.
+     */
+    public String getDifficultySummary() {
+        if (myDifficultySettings == null) {
+            return "No difficulty set";
+        }
+
+        return String.format(
+                "Difficulty: %s | Hints: %d/%d | Score Modifiers: +%d/-%d/-%d/-%d",
+                myDifficultySettings.getDifficultyName(),
+                getHintsRemaining(),
+                myDifficultySettings.getMaxHints(),
+                myDifficultySettings.getCorrectAnswerPoints(),
+                myDifficultySettings.getWrongAnswerPenalty(),
+                myDifficultySettings.getHintPenalty(),
+                myDifficultySettings.getSkipQuestionPenalty()
         );
-
-        JOptionPane.showMessageDialog(this, info, "Difficulty Information",
-                JOptionPane.INFORMATION_MESSAGE);
     }
 
-    /**
-     * Shows a dialog for creating custom difficulty settings.
-     */
-    private void showCustomDifficultyDialog() {
-        // This could be expanded into a full custom difficulty editor
-        String[] options = {"Easy Base", "Normal Base", "Hard Base", "Expert Base"};
-        int choice = JOptionPane.showOptionDialog(this,
-                "Choose a base difficulty to customize:",
-                "Custom Difficulty",
-                JOptionPane.DEFAULT_OPTION,
-                JOptionPane.QUESTION_MESSAGE,
-                null,
-                options,
-                options[1]);
+    // Getters following naming convention
+    /** Returns maze instance for game. */
+    public Maze getMaze() { return myMaze; }
 
-        if (choice >= 0) {
-            DifficultySettings baseSettings;
-            switch (choice) {
-                case 0: baseSettings = DifficultyPresets.easy(); break;
-                case 1: baseSettings = DifficultyPresets.normal(); break;
-                case 2: baseSettings = DifficultyPresets.hard(); break;
-                case 3: baseSettings = DifficultyPresets.expert(); break;
-                default: baseSettings = DifficultyPresets.normal();
-            }
+    /** Returns player instance for game. */
+    public Player getPlayer() { return myPlayer; }
 
-            // For now, just use the base settings
-            // In a full implementation, you'd show a detailed customization dialog
-            setDifficulty(baseSettings);
-            JOptionPane.showMessageDialog(this,
-                    "Custom difficulty based on " + baseSettings.getDifficultyName() + " created.\n" +
-                            "Full customization dialog would be implemented here.",
-                    "Custom Difficulty",
-                    JOptionPane.INFORMATION_MESSAGE);
-        }
-    }
-
-    /**
-     * Starts a new game with difficulty selection.
-     */
-    private void startNewGame() {
-        showDifficultySelection();
-    }
-
-    /**
-     * Starts the game with the current difficulty settings.
-     */
-    private void startGameWithCurrentDifficulty() {
-        // Clear the content panel and show game panel
-        myContentPanel.removeAll();
-
-        // Create a simple game started panel (placeholder for actual game UI)
-        JPanel gamePanel = new JPanel(new BorderLayout());
-        gamePanel.add(new JLabel("Game Started with " + myCurrentDifficulty.getDifficultyName() + " difficulty!",
-                JLabel.CENTER), BorderLayout.CENTER);
-
-        JButton backButton = new JButton("Back to Difficulty Selection");
-        backButton.addActionListener(theEvent -> showDifficultySelection());
-        gamePanel.add(backButton, BorderLayout.SOUTH);
-
-        myContentPanel.add(gamePanel, BorderLayout.CENTER);
-        myContentPanel.revalidate();
-        myContentPanel.repaint();
-
-        // Here you would typically transition to the actual game state
-        // myGameStateManager.setState(new GamePlayState());
-    }
-
-    /**
-     * Returns the game state manager instance.
-     *
-     * @return The {@link GameStateManager} currently managing the game states.
-     */
-    public GameStateManager getGameStateManager() {
-        return myGameStateManager;
-    }
-
-    /**
-     * Returns the main content panel of the game window.
-     *
-     * @return The {@link JPanel} serving as the main content area.
-     */
-    public JPanel getContentPanel() {
-        return myContentPanel;
-    }
+    /** Returns game state manager instance for game. */
+    public GameStateManager getStateManager() { return myGSM; }
 
     /**
      * Gets the current difficulty settings.
      *
-     * @return The current {@link DifficultySettings} instance.
+     * @return The current DifficultySettings instance.
      */
-    public DifficultySettings getCurrentDifficulty() {
-        return myCurrentDifficulty;
-    }
+    public DifficultySettings getDifficultySettings() { return myDifficultySettings; }
 
     /**
-     * Main method that launches the Trivia Maze Game application.
-     * Sets the system look and feel, then creates and displays the main game window.
+     * Gets the number of hints used in the current game.
      *
-     * @param theArgs Command-line arguments (not used in this application).
+     * @return The number of hints used.
      */
-    public static void main(final String[] theArgs) {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                // Set native look and feel for the operating system
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (final ClassNotFoundException | InstantiationException |
-                           IllegalAccessException | UnsupportedLookAndFeelException e) {
-                // Print stack trace for debugging, but consider more user-friendly error handling
-                // in a production application.
-                e.printStackTrace();
-            }
-            // Create and display the game window
-            new Game().setVisible(true);
-        });
+    public int getHintsUsed() { return myHintsUsed; }
+
+    /**
+     * Checks if skipping questions is allowed based on difficulty.
+     *
+     * @return True if skipping is allowed, false otherwise.
+     */
+    public boolean isSkippingAllowed() { return myDifficultySettings.isAllowSkipping(); }
+
+    /**
+     * Checks if difficulty has been properly initialized.
+     *
+     * @return True if difficulty is initialized, false otherwise.
+     */
+    public boolean isDifficultyInitialized() { return myDifficultyInitialized; }
+
+    /** Adds property change listener for observing game events. */
+    public void addListener(final PropertyChangeListener l) {
+        pcs.addPropertyChangeListener(l);
+    }
+
+    /** Removes property change listener. */
+    public void removeListener(final PropertyChangeListener l) {
+        pcs.removePropertyChangeListener(l);
+    }
+
+    /** Recreate PropertyChangeSupport after deserialization. */
+    @Serial
+    private Object readResolve() {
+        pcs = new PropertyChangeSupport(this);
+        return this;
     }
 }

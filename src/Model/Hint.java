@@ -7,7 +7,7 @@ public class Hint {
     /*
     The text of hint to display to user
      */
-    private final String text;
+    private final String myText;
     /*
     Flag to check if hint has already been used
      */
@@ -15,14 +15,14 @@ public class Hint {
 
     /**
      * This creates a new hint
-     * @param text the text of the hint
+     * @param theText the text of the hint
      * @throws IllegalArgumentException if text is null or empty
      */
-    public Hint(String text) {
-        if (text == null || text.isEmpty()) {
+    public Hint(final String theText) {
+        if (theText == null || theText.isEmpty()) {
             throw new IllegalArgumentException("Hint text can't be null or empty");
         }
-        this.text = text;
+        this.myText = theText;
 
     }
 
@@ -31,7 +31,7 @@ public class Hint {
      */
     public String useHint() {
         isUsed = true;
-        return text;
+        return myText;
     }
 
     /**

@@ -10,6 +10,7 @@ public abstract class Question {
     /** The hint associated with the question to help the player, can be null. */
     protected final Hint myHint;
 
+
     /**
      * Constructs a new question with the specified prompt and hint.
      *

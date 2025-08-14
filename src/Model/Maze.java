@@ -1,5 +1,6 @@
 package Model;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -8,25 +9,27 @@ import java.io.Serializable;
  * supports movement, state tracking, and reset
  */
 public class Maze implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
-
     private final Room[][] myGrid;
     private final int myRows, myCols;
     private final Room myStartRoom, myExitRoom;
     private Room myCurrentPosition;
+    private final questionFactory myQuestionFactory;
 
     /**
      *
      * Constructs new maze with specified amount of rows and colunms
      * Initializes grid, room, doors, and starting position
-     * @param rows number of rows in maze
-     * @param cols number of colunms in maze
+     * @param theRows number of rows in maze
+     * @param theCols number of colunms in maze
      * @throws IllegalArgumentException if rows and cols are less then 1
      */
-    public Maze(final int theRows, final int theCols) {
+    public Maze(final int theRows, final int theCols, questionFactory theQuestionFactory) {
         validateMazeDimensions(theRows, theCols);
         this.myRows = theRows;
         this.myCols = theCols;
+        myQuestionFactory = theQuestionFactory;
         myGrid = new Room[myRows][myCols];
         createRooms();
         connectDoors();
@@ -35,6 +38,7 @@ public class Maze implements Serializable {
 
         myCurrentPosition = myStartRoom;
         myStartRoom.markVisited();
+
     }
 
     /**
@@ -55,8 +59,8 @@ public class Maze implements Serializable {
 
     /**
      * Fetch room at given position
-     * @param row the row index of room
-     * @param col the colunm of room
+     * @param theRow the row index of room
+     * @param theCol the colunm of room
      * @return room object at specified coordinates
      * @throws  IndexOutOfBoundsException if coordinates are outside maze bounds
      */
@@ -66,24 +70,46 @@ public class Maze implements Serializable {
         }
         return myGrid[theRow][theCol];
     }
+    public Room getStartRoom() {
+        return myStartRoom;
+    }
+    public Room getExitRoom()  {
+        return myExitRoom;
+    }
+
+
+    public Door getDoor(final Direction theDir) {
+        return myCurrentPosition.getDoor(theDir);
+    }
+
+    public boolean canMove(final Direction theDir) {
+        final Door door = getDoor(theDir);
+        return door != null && !door.isBlocked();
+    }
 
     /**
-     * This moves player from current room through door in specified direction.
-     * If no door exists it remains blocked and the player does not move.
-     * @param direction compass direction to move(NWSE)
-     * @return true if move was a success, false otherewise
+     * Step one room through an unblocked door. Assumes validation by caller.
+     * Returns the new current room.
      */
-    public boolean move(final Direction theDirection) {
-        boolean validMove = false;
-        Door door = myCurrentPosition.getDoor(theDirection);
-        if (door != null && !door.isBlocked()) {
-            Room next = door.getNextRoom(myCurrentPosition);
-            myCurrentPosition = next;
-            myCurrentPosition.markVisited();
-            validMove = true;
-        }
-        return validMove;
+    public Room step(final Direction theDir) {
+        final Door door = getDoor(theDir);
+        if (door == null || door.isBlocked()) return myCurrentPosition;
+        myCurrentPosition = door.getNextRoom(myCurrentPosition);
+        myCurrentPosition.markVisited();
+        return myCurrentPosition;
     }
+
+//    /**
+//     * This moves player from current room through door in specified direction.
+//     * If no door exists it remains blocked and the player does not move.
+//      * @param theDirection compass direction to move(NWSE)
+//     * @return true if move was a success, false otherewise
+//     */
+public boolean move(final Direction theDir) {
+    if (!canMove(theDir)) return false;
+    step(theDir);
+    return true;
+}
 
     /**
      * Returns room player is currently in
@@ -112,6 +138,11 @@ public class Maze implements Serializable {
             }
         }
         myStartRoom.markVisited();
+    }
+
+    /** Connectivity check from current position to exit using only unblocked doors. */
+    public boolean hasPathToExitFromCurrent() {
+        return hasPath(myCurrentPosition, myExitRoom);
     }
 
     /**
@@ -143,19 +174,51 @@ public class Maze implements Serializable {
         for (int r = 0; r < myRows; r++) {
             for (int c = 0; c < myCols; c++) {
                 final Room room = myGrid[r][c];
+
                 // Connect to the room above (North)
                 if (r > 0) {
-                    final Door nsDoor = new Door(room, myGrid[r - 1][c], null);
-                    room.setDoor(Direction.NORTH, nsDoor);
-                    myGrid[r - 1][c].setDoor(Direction.SOUTH, nsDoor);
-                }
+                     Room upNeighbor = myGrid[r - 1][c];
+                     Question question = myQuestionFactory.getNextAvailableQuestion();
+                     Door door = new Door(room, upNeighbor, question);
+                     room.setDoor(Direction.NORTH, door);
+                     upNeighbor.setDoor(Direction.SOUTH, door);
+                    }
+
                 // Connect to the room to the left (West)
                 if (c > 0) {
-                    final Door weDoor = new Door(room, myGrid[r][c - 1], null);
-                    room.setDoor(Direction.WEST, weDoor);
-                    myGrid[r][c - 1].setDoor(Direction.EAST, weDoor);
+                    Room leftNeighbor = myGrid[r][c - 1];
+                    final Question question = myQuestionFactory.getNextAvailableQuestion();
+                    Door door = new Door(room, leftNeighbor, question);
+                    room.setDoor(Direction.WEST, door);
+                    leftNeighbor.setDoor(Direction.EAST, door);
+
+                    }
                 }
             }
         }
+
+    // BFS over rooms via unblocked doors
+    private boolean hasPath(final Room start, final Room goal) {
+        if (start == goal) return true;
+
+        final java.util.Set<Room> visited = new java.util.HashSet<>();
+        final java.util.ArrayDeque<Room> q = new java.util.ArrayDeque<>();
+        visited.add(start);
+        q.add(start);
+
+        while (!q.isEmpty()) {
+            final Room r = q.poll();
+            for (final Direction d : r.getAvailableDirections()) {
+                final Door door = r.getDoor(d);
+                if (door == null || door.isBlocked()) continue;
+                final Room nxt = door.getNextRoom(r);
+                if (nxt == goal) return true;
+                if (visited.add(nxt)) q.add(nxt);
+            }
+        }
+        return false;
     }
-}
+    }
+
+
+
