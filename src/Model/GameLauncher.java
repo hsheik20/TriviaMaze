@@ -158,7 +158,7 @@ public class GameLauncher implements PropertyChangeListener {
                 continue;
             }
 
-            System.out.print("Command (n/s/e/w, p=pause, r=resume, q=quit, h=help, save): ");
+            System.out.print("Please enter a command: ");
             String cmd = in.nextLine().trim().toLowerCase(Locale.ROOT);
             switch (cmd) {
                 case "n" -> game.attemptMove(Direction.NORTH);
@@ -212,38 +212,58 @@ public class GameLauncher implements PropertyChangeListener {
                 Question q = req.question();
                 Door door = req.door();
 
-                int attempts = game.getAttemptsLeft(door);
-                boolean canHint = game.canUseHint(q);
-                boolean canSkip = game.canSkip();
-
+                // Keep asking until correct, skipped, or door becomes blocked / attempts run out
                 while (true) {
+                    int attempts = game.getAttemptsLeft(door);
+                    boolean canHint = game.canUseHint(q);
+                    boolean canSkip = game.canSkip();
+
                     Display.showQuestion(q, attempts, canHint, canSkip);
+
                     String ans = in.nextLine().trim();
 
+                    // Hint
                     if (canHint && ans.equalsIgnoreCase("h")) {
                         String hint = game.useHint(q);
-                        if (hint == null) {
-                            System.out.println("(No hint available.)");
-                        } else {
+                        if (hint != null) {
                             Display.showHint(hint, game.getHintsLeft());
+                        } else {
+                            System.out.println("(No hint available.)");
                         }
-                        attempts = game.getAttemptsLeft(door);
-                        // loop again to answer after hint
+                        // loop and ask again
                         continue;
                     }
 
+                    // Skip
                     if (canSkip && ans.equalsIgnoreCase("k")) {
                         game.skipQuestion(door);
                         Display.blocked();
-                        break;
+                        break; // done with this door
                     }
 
+                    // Normal answer
                     boolean correct = q.isCorrect(ans);
                     game.handleAnswer(door, correct);
-                    if (correct) Display.correct(); else Display.wrong();
-                    break;
+
+                    if (correct) {
+                        Display.correct();
+                        break; // door opened & movement happens in handleAnswer
+                    } else {
+                        Display.wrong();
+
+                        // If door got blocked or no attempts left, stop asking
+                        int left = game.getAttemptsLeft(door);
+                        if (door.isBlocked() || left == 0) {
+                            break;
+                        }
+
+                        // Otherwise re-ask immediately
+                        System.out.println("Try again.");
+                        System.out.println("----------------------------------------------");
+                    }
                 }
             }
+
             case "playerMoved" -> {
                 Room newRoom = (Room) evt.getNewValue();
                 System.out.printf("Moved to (%d,%d).%n", newRoom.getRow(), newRoom.getCol());
