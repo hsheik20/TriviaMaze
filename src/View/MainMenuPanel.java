@@ -10,27 +10,33 @@ public class MainMenuPanel extends JPanel {
 
     public MainMenuPanel(GameView view) {
         setLayout(new GridBagLayout());
-        var box = new Box(BoxLayout.Y_AXIS);
+        setBackground(new Color(92, 64, 51)); // brown background like the image
 
-        JLabel title = new JLabel("TRIVIA  MAZE", SwingConstants.CENTER);
-        title.setFont(title.getFont().deriveFont(Font.BOLD, 36f));
+        // Title
+        JLabel title = new JLabel("TRIVIA MAZE", SwingConstants.CENTER);
+        title.setFont(new Font("Monospaced", Font.BOLD, 32));
+        title.setForeground(Color.WHITE);
         title.setAlignmentX(CENTER_ALIGNMENT);
+
+        var box = new Box(BoxLayout.Y_AXIS);
         box.add(title);
-        box.add(Box.createVerticalStrut(20));
+        box.add(Box.createVerticalStrut(30));
 
-        JButton newGame = new JButton("New Game");
-        JButton load    = new JButton("Load Game");
-        JButton instruct= new JButton("Instructions");
-        JButton about   = new JButton("About");
-        JButton quit    = new JButton("Quit");
+        // Create buttons
+        JButton newGame   = createMenuButton("NEW GAME");
+        JButton load      = createMenuButton("LOAD GAME");
+        JButton instruct  = createMenuButton("INSTRUCTIONS");
+        JButton about     = createMenuButton("ABOUT");
+        JButton quit      = createMenuButton("QUIT");
 
+        // Add buttons with spacing
         for (var b : new JButton[]{newGame, load, instruct, about, quit}) {
             b.setAlignmentX(CENTER_ALIGNMENT);
-            b.setMaximumSize(new Dimension(240, 40));
             box.add(b);
-            box.add(Box.createVerticalStrut(10));
+            box.add(Box.createVerticalStrut(15));
         }
 
+        // Hook up actions to wiring
         newGame.addActionListener(e -> { if (onNewGame != null) onNewGame.run(); });
         load.addActionListener(e -> { if (onLoadGame != null) onLoadGame.run(); });
         instruct.addActionListener(e -> { if (onInstructions != null) onInstructions.run(); });
@@ -40,6 +46,23 @@ public class MainMenuPanel extends JPanel {
         add(box);
     }
 
+    /** Creates an orange arcade-style button */
+    private JButton createMenuButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Monospaced", Font.BOLD, 20));
+        button.setForeground(Color.WHITE);
+        button.setBackground(new Color(255, 140, 0));
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(255, 200, 0), 4),
+                BorderFactory.createEmptyBorder(10, 20, 10, 20)
+        ));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setMaximumSize(new Dimension(260, 60));
+        return button;
+    }
+
+    // Keep the original wiring methods
     public void onNewGame(Runnable r){ this.onNewGame = r; }
     public void onLoadGame(Runnable r){ this.onLoadGame = r; }
     public void onInstructions(Runnable r){ this.onInstructions = r; }
