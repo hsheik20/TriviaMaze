@@ -27,11 +27,18 @@ public class TrueFalseQuestion extends Question {
         return Boolean.parseBoolean(theAnswer.toLowerCase()) == myCorrectAnswer;
     }
 
+    public String getCorrectAnswer() {
+        return myCorrectAnswer ? "True" : "False";
+    }
+
     /**
      * This returns correct answer as string
      */
     @Override
-    public String getCorrectAnswer() {
-        return Boolean.toString(myCorrectAnswer);
+    public String cheatToken() {
+        return myCorrectAnswer ? "T" : "F";
     }
+
+
+
 }

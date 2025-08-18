@@ -14,6 +14,7 @@ public class GameView extends JFrame {
     private final MazePanel mazePanel   = new MazePanel(this);
     private final QuestionPanel questionPanel = new QuestionPanel(this);
     private final PausePanel pausePanel = new PausePanel(this);
+    private final MenuBar menuBar = new MenuBar();
     private final JPanel gameOverPanel  = new JLabelPanel("GAME OVER");
     private final JPanel victoryPanel   = new JLabelPanel("YOU WIN!");
 
@@ -23,7 +24,8 @@ public class GameView extends JFrame {
         setSize(900, 650);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
-        setJMenuBar(new MenuBar());
+        setJMenuBar(menuBar); // Set it on the JFrame
+
 
         root.add(mainMenu,     Screen.MAIN_MENU.name());
         root.add(mazePanel,    Screen.MAZE.name());
@@ -34,12 +36,22 @@ public class GameView extends JFrame {
         add(root, BorderLayout.CENTER);
     }
 
-    public void showScreen(Screen s) { cards.show(root, s.name()); }
+    // GameView.java
+    public void showScreen(Screen s) {
+        cards.show(root, s.name());
+        if (s == Screen.MAZE) {
+            mazePanel.requestFocusInWindow();
+        }
+    }
+
 
     public MainMenuPanel getMainMenu()      { return mainMenu; }
     public MazePanel getMazePanel()         { return mazePanel; }
     public QuestionPanel getQuestionPanel() { return questionPanel; }
     public PausePanel getPausePanel()       { return pausePanel; }
+    public View.MenuBar getCustomMenuBar() {
+        return menuBar;
+    }
 
     // simple label panel used for GameOver/Victory placeholders
     static class JLabelPanel extends JPanel {

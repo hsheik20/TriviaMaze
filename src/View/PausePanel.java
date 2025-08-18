@@ -7,26 +7,30 @@ import java.awt.*;
 public class PausePanel extends JPanel {
     private Runnable onResume, onMainMenu, onQuit;
 
-    public PausePanel(GameView view) {
+    public PausePanel(final GameView view) {
         setLayout(new GridBagLayout());
-        var box = new Box(BoxLayout.Y_AXIS);
-        box.add(btn("Resume",    () -> { if (onResume != null) onResume.run(); }));
-        box.add(Box.createVerticalStrut(10));
-        box.add(btn("Main Menu", () -> { if (onMainMenu != null) onMainMenu.run(); }));
-        box.add(Box.createVerticalStrut(10));
-        box.add(btn("Quit",      () -> { if (onQuit != null) onQuit.run(); }));
-        add(box);
+        setBackground(new Color(245,245,245));
+
+        JButton resume   = new JButton("Resume");
+        JButton mainMenu = new JButton("Main Menu");
+        JButton quit     = new JButton("Quit");
+
+        // Wire the buttons to the callbacks
+        resume.addActionListener(e -> { if (onResume   != null) onResume.run(); });
+        mainMenu.addActionListener(e -> { if (onMainMenu != null) onMainMenu.run(); });
+        quit.addActionListener(e -> { if (onQuit     != null) onQuit.run(); });
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 0, 10, 0);
+        gbc.gridx = 0;
+
+        add(resume,   gbc);
+        add(mainMenu, gbc);
+        add(quit,     gbc);
     }
 
-    private JComponent btn(String text, Runnable r){
-        var b = new JButton(text);
-        b.setAlignmentX(CENTER_ALIGNMENT);
-        b.addActionListener(e -> r.run());
-        b.setMaximumSize(new Dimension(220, 40));
-        return b;
-    }
-
-    public void onResume(Runnable r){ this.onResume = r; }
-    public void onMainMenu(Runnable r){ this.onMainMenu = r; }
-    public void onQuit(Runnable r){ this.onQuit = r; }
+    // Callbacks the controller sets
+    public void onResume(Runnable r)   { this.onResume = r; }
+    public void onMainMenu(Runnable r) { this.onMainMenu = r; }
+    public void onQuit(Runnable r)     { this.onQuit = r; }
 }

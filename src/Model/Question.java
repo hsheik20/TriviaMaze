@@ -60,4 +60,10 @@ public abstract class Question {
      * @return The correct answer as a String.
      */
     public abstract String getCorrectAnswer();
+
+    /** This shows the answer when player presses cheat. */
+    public String cheatToken() {
+        // Default: whatever the correct answer string is
+        return getCorrectAnswer();
+    }
 }

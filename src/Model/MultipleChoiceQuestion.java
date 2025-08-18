@@ -1,59 +1,63 @@
 package Model;
+
 import java.util.List;
 
 /**
- * This represents a multiple choice trivia question. It shows a list of answer options,
- * and checks the player's choice by index
+ * Multiple-choice question that validates answers strictly as letters A/B/C/D.
+ * The correct answer index is 0-based (0 -> A, 1 -> B, 2 -> C, 3 -> D).
  */
 public class MultipleChoiceQuestion extends Question {
-    private final List<String> myOptions;
-    private final int myCorrectIndex;
+    private final List<String> myOptions;   // immutable copy
+    private final int myCorrectIndex;       // 0-based
 
-    /**
-     * This constructs a new multiple choice question
-     * @param thePrompt the text of question
-     * @param theOptions the list of answer choices
-     * @param theCorrectIndex the index of correct answer
-     * @param theHint optional hint to display to player
-     * @throws IllegalArgumentException if index out of bounds
-     */
-    public MultipleChoiceQuestion(final String thePrompt, final List<String> theOptions, final int theCorrectIndex, final Hint theHint) {
+    public MultipleChoiceQuestion(final String thePrompt,
+                                  final List<String> theOptions,
+                                  final int theCorrectIndex,
+                                  final Hint theHint) {
         super(thePrompt, theHint);
-        this.myOptions = theOptions;
+        if (theOptions == null || theOptions.isEmpty()) {
+            throw new IllegalArgumentException("Options cannot be null or empty.");
+        }
+        if (theCorrectIndex < 0 || theCorrectIndex >= theOptions.size()) {
+            throw new IllegalArgumentException("Correct index out of range.");
+        }
+        this.myOptions = List.copyOf(theOptions);
         this.myCorrectIndex = theCorrectIndex;
     }
 
-    /**
-     * This returns view of all the answer options
-     */
+    /** Returns an immutable view of the options. */
     public List<String> getOptions() {
         return myOptions;
     }
 
-    /**
-     * This parses player's answer as integer index and checks if it is correct index
-     * @param answer the user's answer as string
-     * @return true if parsed index matches correct index, false otherwise
-     */
+    /** Accept only letters A/B/C/D (case-insensitive). */
     @Override
-    public boolean isCorrect(String answer) {
-        try{
-            int ansIndex = Integer.parseInt(answer);
-            if (ansIndex < 0 || ansIndex > myOptions.size()) {
-                throw new IllegalArgumentException("Invalid index option for answer");
-            }
-            return ansIndex == myCorrectIndex;
-        } catch (NumberFormatException e) {
-    return false;
-        }
+    public boolean isCorrect(final String answer) {
+        if (answer == null) return false;
+        final String a = answer.trim();
+        if (a.length() != 1) return false;
+
+        final char ch = Character.toUpperCase(a.charAt(0));
+        final int idx = ch - 'A';            // A->0, B->1, C->2, D->3
+        return idx >= 0 && idx < myOptions.size() && idx == myCorrectIndex;
     }
 
-    /**
-     *This returns the correct answer
-     */
+    /** Returns the correct option TEXT (kept for compatibility with existing UI). */
     @Override
     public String getCorrectAnswer() {
         return myOptions.get(myCorrectIndex);
     }
+
+    /** Convenience: returns the correct letter, e.g., 'C'. */
+    public char getCorrectLetter() {
+        return (char) ('A' + myCorrectIndex);
+    }
+
+    // Model/MultipleChoiceQuestion.java
+    @Override
+    public String cheatToken() {
+        return String.valueOf(getCorrectLetter());   // e.g., "C"
+    }
+
 
 }

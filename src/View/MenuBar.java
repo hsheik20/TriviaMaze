@@ -1,42 +1,51 @@
+// View/GameMenuBar.java
 package View;
 
 import javax.swing.*;
-import java.util.function.Consumer;
 
 public class MenuBar extends JMenuBar {
-    private Runnable onNew, onSave, onLoad, onExit;
-    private Runnable onEasy, onNormal, onHard;
+
+    // callbacks (wired by controller)
+    private Runnable onNewGame, onPauseToggle, onSaveGame, onQuitGame;
+
+    // keep refs so you can update labels/enabled state
+    private final JMenuItem miNew   = new JMenuItem("New Game");
+    private final JMenuItem miPause = new JMenuItem("Pause Game");
+    private final JMenuItem miSave  = new JMenuItem("Save Game");
+    private final JMenuItem miQuit  = new JMenuItem("Quit Game");
 
     public MenuBar() {
         JMenu game = new JMenu("Game");
-        JMenuItem newGame = new JMenuItem("New");
-        JMenuItem save = new JMenuItem("Quick Save");
-        JMenuItem load = new JMenuItem("Load");
-        JMenuItem exit = new JMenuItem("Exit");
-        newGame.addActionListener(e -> fire(onNew));
-        save.addActionListener(e -> fire(onSave));
-        load.addActionListener(e -> fire(onLoad));
-        exit.addActionListener(e -> fire(onExit));
-        game.add(newGame); game.add(save); game.add(load); game.addSeparator(); game.add(exit);
 
-        JMenu diff = new JMenu("Difficulty");
-        JMenuItem easy = new JMenuItem("Easy");
-        JMenuItem normal = new JMenuItem("Normal");
-        JMenuItem hard = new JMenuItem("Hard");
-        easy.addActionListener(e -> fire(onEasy));
-        normal.addActionListener(e -> fire(onNormal));
-        hard.addActionListener(e -> fire(onHard));
-        diff.add(easy); diff.add(normal); diff.add(hard);
+        // click handlers only (no accelerators)
+        miNew.addActionListener(e -> { if (onNewGame     != null) onNewGame.run(); });
+        miPause.addActionListener(e -> { if (onPauseToggle!= null) onPauseToggle.run(); });
+        miSave.addActionListener(e -> { if (onSaveGame    != null) onSaveGame.run(); });
+        miQuit.addActionListener(e -> { if (onQuitGame    != null) onQuitGame.run(); });
 
-        add(game); add(diff);
+        game.add(miNew);
+        game.add(miPause);
+        game.add(miSave);
+        game.addSeparator();
+        game.add(miQuit);
+
+        add(game);
     }
-    private void fire(Runnable r){ if(r!=null) r.run(); }
 
-    public void onNew(Runnable r){ onNew=r; }
-    public void onSave(Runnable r){ onSave=r; }
-    public void onLoad(Runnable r){ onLoad=r; }
-    public void onExit(Runnable r){ onExit=r; }
-    public void onDifficultyEasy(Runnable r){ onEasy=r; }
-    public void onDifficultyNormal(Runnable r){ onNormal=r; }
-    public void onDifficultyHard(Runnable r){ onHard=r; }
+    /* ---------- wiring API ---------- */
+    public void onNewGame(Runnable r)      { this.onNewGame = r; }
+    public void onPauseToggle(Runnable r)  { this.onPauseToggle = r; }
+    public void onSaveGame(Runnable r)     { this.onSaveGame = r; }
+    public void onQuitGame(Runnable r)     { this.onQuitGame = r; }
+
+    /* ---------- optional helpers ---------- */
+    /** Update Pause/Resume label based on current state. */
+    public void setPaused(boolean paused) {
+        miPause.setText(paused ? "Resume Game" : "Pause Game");
+    }
+
+    /** Enable/disable Save (e.g., before a game starts). */
+    public void setSaveEnabled(boolean enabled) {
+        miSave.setEnabled(enabled);
+    }
 }

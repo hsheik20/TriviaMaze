@@ -1,4 +1,3 @@
-// View/MazePanel.java
 package View;
 
 import Model.Direction;
@@ -18,9 +17,13 @@ public class MazePanel extends JPanel {
     /* --------- Public callbacks (wired by controller) --------- */
     private Consumer<Direction> onMove;
     private Runnable onPause;
+    private Runnable onNewGame, onSave, onQuit;
 
     public void onMove(Consumer<Direction> c){ this.onMove = c; }
     public void onPause(Runnable r){ this.onPause = r; }
+    public void onNewGame(Runnable r){ this.onNewGame = r; }
+    public void onSave(Runnable r){ this.onSave = r; }
+    public void onQuit(Runnable r){ this.onQuit = r; }
 
     /* ----------------- Colors & styling ----------------- */
     private static final Color COL_ROOM   = new Color(235,238,241);   // light gray card
@@ -28,8 +31,8 @@ public class MazePanel extends JPanel {
     private static final Color COL_EXIT   = new Color(217,247,223);   // soft green
     private static final Color COL_PLAYER = new Color(255,239,170);   // soft yellow
     private static final Color COL_GRID_BG= new Color(245,246,248);
+    private static final Color COL_BLOCKED = new Color(255, 150, 150); // light red
 
-    private static final Font  FONT_TITLE = new Font(Font.SANS_SERIF, Font.BOLD, 13);
     private static final Font  FONT_META  = new Font(Font.MONOSPACED, Font.PLAIN, 12);
 
     /* ----------------- Layout pieces ----------------- */
@@ -46,14 +49,18 @@ public class MazePanel extends JPanel {
     private final JLabel northLbl = chip("NORTH"), southLbl = chip("SOUTH"),
             eastLbl  = chip("EAST"),  westLbl  = chip("WEST");
 
-    // bottom controls
+    // bottom controls (already clickable)
     private final JButton myUp    = new JButton("↑");
-    private final JButton myDown = new JButton("↓");
-    private final JButton myLeft= new JButton("←");
+    private final JButton myDown  = new JButton("↓");
+    private final JButton myLeft  = new JButton("←");
     private final JButton myRight = new JButton("→");
     private final JButton myPause = new JButton("Pause");
 
-    // cached dims (so we can rebuild grid only when rows/cols change)
+    private final PositionPanel myPositionPanel = new PositionPanel();
+    private final DirectionPanel myDirectionPanel = new DirectionPanel();
+    private final ControlsPanel myControlsPanel = new ControlsPanel();
+
+    // cached dims
     private int lastRows = -1, lastCols = -1;
 
     public MazePanel(final GameView view) {
@@ -72,7 +79,7 @@ public class MazePanel extends JPanel {
         final JPanel center = new JPanel(new BorderLayout(8,0));
         add(center, BorderLayout.CENTER);
 
-        // grid holder (we swap actual grid panel inside when maze size changes)
+        // grid holder
         gridHolder.setLayout(new BorderLayout());
         gridHolder.setBackground(COL_GRID_BG);
         gridHolder.setBorder(new EmptyBorder(8,8,8,8));
@@ -82,43 +89,35 @@ public class MazePanel extends JPanel {
         final JPanel right = buildRightSidebar();
         center.add(right, BorderLayout.EAST);
 
-        /* ---------- Bottom controls ---------- */
-        final JPanel controls = new JPanel();
-        controls.add(myUp); controls.add(myLeft); controls.add(myDown); controls.add(myRight); controls.add(myPause);
-        add(controls, BorderLayout.SOUTH);
-
-        // actions
+        // clickable arrow buttons + pause button
         myUp.addActionListener(e -> fireMove(Direction.NORTH));
         myDown.addActionListener(e -> fireMove(Direction.SOUTH));
         myLeft.addActionListener(e -> fireMove(Direction.WEST));
         myRight.addActionListener(e -> fireMove(Direction.EAST));
         myPause.addActionListener(e -> { if (onPause != null) onPause.run(); });
 
-        // key bindings
+        // key bindings (WHEN_FOCUSED) — arrows only for movement
         bindKey("UP",    () -> fireMove(Direction.NORTH));
-        bindKey("W",     () -> fireMove(Direction.NORTH));
         bindKey("DOWN",  () -> fireMove(Direction.SOUTH));
-        bindKey("S",     () -> fireMove(Direction.SOUTH));
         bindKey("LEFT",  () -> fireMove(Direction.WEST));
-        bindKey("A",     () -> fireMove(Direction.WEST));
         bindKey("RIGHT", () -> fireMove(Direction.EAST));
-        bindKey("D",     () -> fireMove(Direction.EAST));
-        bindKey("P",     () -> { if (onPause != null) onPause.run(); });
+
+        // plain-letter game actions (work only when MazePanel has focus)
+        bindKey("P", () -> { if (onPause   != null) onPause.run(); });
+        bindKey("N", () -> { if (onNewGame != null) onNewGame.run(); });
+        bindKey("S", () -> { if (onSave    != null) onSave.run(); });
+        bindKey("Q", () -> { if (onQuit    != null) onQuit.run(); });
 
         setFocusable(true);
     }
 
-    /* ============================================================
-       Public API used by the controller
-       ============================================================ */
+    /* ================== Public API used by controller ================== */
 
-    /** Update HUD numbers. */
     public void setHud(final int x, final int y, final int hintsLeft) {
         posLbl.setText("Pos: (" + x + "," + y + ")");
         hintsLbl.setText("Hints: " + (hintsLeft == Integer.MAX_VALUE ? "∞" : hintsLeft));
     }
 
-    /** Show the remaining attempts for the door currently being asked about. */
     public void setDoorAttemptsLabel(final Integer attemptsLeftOrNull) {
         if (attemptsLeftOrNull == null) {
             attemptsDoorLbl.setText("—");
@@ -133,10 +132,24 @@ public class MazePanel extends JPanel {
     public void render(final Maze maze, final Player player) {
         ensureGrid(maze.getRows(), maze.getCols());
 
-        // paint cells
+        // === NEW: update the right-rail Position panel ===
+        final int px = player.getX();
+        final int py = player.getY();
+        myPositionPanel.setPosition(px, py);
+
+        if (maze.hasPathToExitFromCurrent()) {
+            int steps = Math.abs((maze.getRows() - 1) - px)
+                    + Math.abs((maze.getCols() - 1) - py);
+            myPositionPanel.setDistanceText(String.valueOf(steps));
+        } else {
+            myPositionPanel.setDistanceText("No path");
+        }
+        // === END NEW ===
+
+        // your existing cell painting code
         final int rows = maze.getRows(), cols = maze.getCols();
-        for (int r=0; r<rows; r++) {
-            for (int c=0; c<cols; c++) {
+        for (int r = 0; r < rows; r++) {
+            for (int c = 0; c < cols; c++) {
                 final boolean isPlayer = (player.getX()==r && player.getY()==c);
                 final boolean isStart  = (r==0 && c==0);
                 final boolean isExit   = (r==rows-1 && c==cols-1);
@@ -145,11 +158,23 @@ public class MazePanel extends JPanel {
                 if (isPlayer)      cell.setState(Cell.State.PLAYER);
                 else if (isExit)   cell.setState(Cell.State.EXIT);
                 else if (isStart)  cell.setState(Cell.State.START);
-                else               cell.setState(Cell.State.ROOM);
+                else {
+                    final Room room = maze.getRoom(r, c);
+                    boolean isBlockedFromPlayer = false;
+                    for (Direction dir : Direction.values()) {
+                        Room neighbor = maze.getCurrentRoom().getDoor(dir) != null
+                                ? maze.getCurrentRoom().getDoor(dir).getNextRoom(maze.getCurrentRoom())
+                                : null;
+                        if (neighbor == room && maze.getDoor(dir).isBlocked()) {
+                            isBlockedFromPlayer = true;
+                            break;
+                        }
+                    }
+                    cell.setState(isBlockedFromPlayer ? Cell.State.BLOCKED : Cell.State.ROOM);
+                }
             }
         }
 
-        // update “available directions” rail
         final Room cur = maze.getCurrentRoom();
         final Set<Direction> avail = (cur != null)
                 ? cur.getAvailableDirections()
@@ -164,67 +189,22 @@ public class MazePanel extends JPanel {
         repaint();
     }
 
-    /* ============================================================
-       Internal helpers
-       ============================================================ */
+
+    /* ============================ Internals ============================ */
+
 
     private JPanel buildRightSidebar() {
-        final JPanel rail = new JPanel();
-        rail.setLayout(new BoxLayout(rail, BoxLayout.Y_AXIS));
-        rail.setBorder(new EmptyBorder(4, 8, 4, 8));
-
-        final JLabel hudTitle = new JLabel("Stats");
-        hudTitle.setFont(FONT_TITLE);
-
-        final JPanel stats = new JPanel(new GridLayout(0,1,0,4));
-        stats.add(labelRow("Hints left:",  hintsLbl)); // reuse
-        stats.add(labelRow("Attempts (door):", attemptsDoorLbl));
-
-        final JLabel dirTitle = new JLabel("Available");
-        dirTitle.setFont(FONT_TITLE);
-
-        final JPanel dirs = new JPanel(new GridLayout(0,1,0,4));
-        dirs.add(northLbl); dirs.add(southLbl); dirs.add(eastLbl); dirs.add(westLbl);
-
-        final JLabel ctrlTitle = new JLabel("Controls");
-        ctrlTitle.setFont(FONT_TITLE);
-
-        final JTextArea keys = new JTextArea("""
-                ↑/W  : North
-                ↓/S  : South
-                ←/A  : West
-                →/D  : East
-                P    : Pause
-                """);
-        keys.setEditable(false);
-        keys.setFont(FONT_META);
-        keys.setOpaque(false);
-
-        rail.add(hudTitle);
-        rail.add(Box.createVerticalStrut(4));
-        rail.add(stats);
-        rail.add(Box.createVerticalStrut(12));
-        rail.add(dirTitle);
-        rail.add(Box.createVerticalStrut(4));
-        rail.add(dirs);
-        rail.add(Box.createVerticalStrut(12));
-        rail.add(ctrlTitle);
-        rail.add(Box.createVerticalStrut(4));
-        rail.add(keys);
-
-        return rail;
+        JPanel rightSidebar = new JPanel(new GridLayout(3, 1));
+        rightSidebar.add(myPositionPanel);   // top card
+        rightSidebar.add(myControlsPanel);   // middle
+        rightSidebar.add(myDirectionPanel);  // bottom
+        return rightSidebar;
     }
 
-    private JPanel labelRow(String label, JLabel value) {
-        final JPanel p = new JPanel(new BorderLayout(6,0));
-        final JLabel l = new JLabel(label);
-        l.setFont(FONT_META);
-        value.setFont(FONT_META);
-        p.add(l, BorderLayout.WEST);
-        p.add(value, BorderLayout.CENTER);
-        p.setOpaque(false);
-        return p;
-    }
+
+
+
+
 
     private static JLabel chip(String text) {
         final JLabel l = new JLabel(text, SwingConstants.CENTER);
@@ -267,7 +247,7 @@ public class MazePanel extends JPanel {
     }
 
     private void bindKey(String key, Runnable r) {
-        getInputMap(WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(key), key);
+        getInputMap(WHEN_FOCUSED).put(KeyStroke.getKeyStroke(key), key);
         getActionMap().put(key, new AbstractAction() {
             @Override public void actionPerformed(java.awt.event.ActionEvent e){ r.run(); }
         });
@@ -277,7 +257,7 @@ public class MazePanel extends JPanel {
 
     /* ----------------- Room cell "card" ----------------- */
     private static final class Cell extends JPanel {
-        enum State { ROOM, START, EXIT, PLAYER }
+        enum State { ROOM, START, EXIT, PLAYER ,BLOCKED }
 
         private final JLabel label = new JLabel("ROOM", SwingConstants.CENTER);
 
@@ -297,7 +277,8 @@ public class MazePanel extends JPanel {
                 case PLAYER -> { setBackground(COL_PLAYER); label.setText("PLAYER"); }
                 case START  -> { setBackground(COL_START);  label.setText("START"); }
                 case EXIT   -> { setBackground(COL_EXIT);   label.setText("EXIT"); }
-                default     -> { setBackground(COL_ROOM);   label.setText("ROOM"); }
+                case BLOCKED -> { setBackground(COL_BLOCKED); label.setText("BLOCKED"); }
+                default      -> { setBackground(COL_ROOM);    label.setText("ROOM"); }
             }
         }
     }
