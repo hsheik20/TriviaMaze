@@ -24,7 +24,21 @@ public class TrueFalseQuestion extends Question {
      */
     @Override
     public boolean isCorrect(final String theAnswer) {
-        return Boolean.parseBoolean(theAnswer.toLowerCase()) == myCorrectAnswer;
+        if (theAnswer == null) return false;
+
+        String answer = theAnswer.trim().toLowerCase();
+
+        boolean parsedAnswer;
+        if (answer.equals("t") || answer.equals("true")) {
+            parsedAnswer = true;
+        } else if (answer.equals("f") || answer.equals("false")) {
+            parsedAnswer = false;
+        } else {
+            // Optional: Reject unrecognized input
+            return false;
+        }
+
+        return parsedAnswer == myCorrectAnswer;
     }
 
     public String getCorrectAnswer() {

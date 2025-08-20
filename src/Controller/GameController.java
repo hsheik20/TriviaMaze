@@ -57,10 +57,14 @@ public class GameController implements PropertyChangeListener {
         wirePausePanel();
 
         //Menu bar click actions
-        view.getCustomMenuBar().onNewGame(this::handleNewGame);   // difficulty chooser
-        view.getCustomMenuBar().onPauseToggle(this::togglePause); // pause/resume
-        view.getCustomMenuBar().onSaveGame(this::saveGame);       // placeholder
-        view.getCustomMenuBar().onQuitGame(this::quit);           // exit
+        view.getCustomMenuBar().setOnNewGame(this::handleNewGame);
+        view.getCustomMenuBar().setOnPauseToggle(this::togglePause);
+        view.getCustomMenuBar().setOnSaveGame(this::saveGame);
+        view.getCustomMenuBar().setOnQuitGame(this::quit);
+        view.getCustomMenuBar().setOnLoadGame(this::handleLoadGame);
+        view.getCustomMenuBar().setOnShowInstructions(this::showInstructionsDialog);
+        view.getCustomMenuBar().setOnShowAbout(this::showAboutDialog);
+
 
         //showing initial screen
         view.showScreen(GameView.Screen.MAIN_MENU);
@@ -109,78 +113,122 @@ public class GameController implements PropertyChangeListener {
         view.getMazePanel().onPause(this::togglePause);
     }
 
+    private void showInstructionsDialog() {
+        JOptionPane.showMessageDialog(view,
+                "Move with arrow keys.\n" +
+                        "Doors ask questions.\n" +
+                        "Hints/Skip depend on difficulty.\n" +
+                        "Reach the exit. If no path remains, you lose.",
+                "Instructions", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showAboutDialog() {
+        JOptionPane.showMessageDialog(view,
+                "Retro Trivia Maze by Husein & team.",
+                "About", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+
     /**
      * This wires answering, hinting, skipping and cheating actions for question panel.
      */
+    // inside GameController
+
     private void wireQuestionPanel() {
-        view.getQuestionPanel().onSubmit(answer -> {
-            if (pendingDoor == null || pendingQuestion == null) return;
-
-            final boolean correct = pendingQuestion.isCorrect(answer);
-
-            // plays sound for incorrect and correct answer
-            if (correct) Sounds.CORRECT.play();
-            else         Sounds.INCORRECT.play();
-
-            game.handleAnswer(pendingDoor, correct);
-
-            if (!correct) {
-                // If still has attempts and door not yet blocked, stay on question screen
-                final int left = game.getAttemptsLeft(pendingDoor);
-                if (!pendingDoor.isBlocked() && (left == Integer.MAX_VALUE || left > 0)) {
-                    view.getQuestionPanel().showWrongAndUpdate(left);
-                    return;
-                }
-
-            }
-
-        });
-
-        view.getQuestionPanel().onHint(() -> {
-            if (pendingQuestion == null) return;
-            final String hint = game.useHint(pendingQuestion);
-            if (hint != null) {
-                view.getQuestionPanel().showHint(hint, game.getHintsLeft());
-            } else {
-                JOptionPane.showMessageDialog(view, "No hint available.", "Hint",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
-        });
-
-        view.getQuestionPanel().onSkip(() -> {
-            if (pendingDoor == null) return;
-            if (game.canSkip()) {
-                game.skipQuestion(pendingDoor);
-            } else {
-                JOptionPane.showMessageDialog(view,
-                        "Skipping is disabled for this difficulty.",
-                        "Skip", JOptionPane.WARNING_MESSAGE);
-            }
-        });
-
-        // Cheat shows token displaying answer
-        view.getQuestionPanel().onCheat(() -> {
-            if (pendingQuestion == null) return;
-            view.getQuestionPanel().showCheat(pendingQuestion.cheatToken());
-        });
+        view.getQuestionPanel().setOnSubmit(this::handleQuestionSubmit);
+        view.getQuestionPanel().setOnHint(this::handleQuestionHint);
+        view.getQuestionPanel().setOnSkip(this::handleQuestionSkip);
+        view.getQuestionPanel().setOnCheat(this::handleQuestionCheat);
     }
+
+    private void handleQuestionSubmit(final String theAnswer) {
+        if (!hasPendingQuestion()) return;
+
+        final boolean theCorrect = pendingQuestion.isCorrect(theAnswer);
+
+        if (theCorrect) Sounds.CORRECT.play();
+        else            Sounds.INCORRECT.play();
+
+        System.out.println("Controller is sending door to Game.handleAnswer: " + pendingDoor);
+        game.handleAnswer(pendingDoor, theCorrect);
+
+        if (!theCorrect) {
+            final int theLeft = game.getAttemptsLeft(pendingDoor);
+            if (!pendingDoor.isBlocked() && theLeft > 0) {
+                view.getQuestionPanel().showWrongAndUpdate(theLeft);
+                return; // stay on question screen
+            }
+        }
+
+        clearPendingQuestion();
+    }
+
+    private void handleQuestionHint() {
+        if (pendingQuestion == null) return;
+
+        final String theHint = game.useHint(pendingQuestion);
+        if (theHint != null) {
+            view.getQuestionPanel().showHint(theHint, game.getHintsLeft());
+        } else {
+            JOptionPane.showMessageDialog(
+                    view,
+                    "No hint available.",
+                    "Hint",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
+        }
+    }
+
+    private void handleQuestionSkip() {
+        if (pendingDoor == null) return;
+
+        if (game.canSkip()) {
+            game.skipQuestion(pendingDoor);
+        } else {
+            JOptionPane.showMessageDialog(
+                    view,
+                    "Skipping is disabled for this difficulty.",
+                    "Skip",
+                    JOptionPane.WARNING_MESSAGE
+            );
+        }
+    }
+
+    private void handleQuestionCheat() {
+        if (pendingQuestion == null) return;
+        view.getQuestionPanel().showCheat(pendingQuestion.cheatToken());
+    }
+
+// ===== helpers =====
+
+    /** @return true if both pendingDoor and pendingQuestion are set. */
+    private boolean hasPendingQuestion() {
+        return pendingDoor != null && pendingQuestion != null;
+    }
+
+    /** Clears the pending door/question context after resolution. */
+    private void clearPendingQuestion() {
+        pendingDoor = null;
+        pendingQuestion = null;
+    }
+
 
     /**
      * This wires the pause-panel buttons
      */
     private void wirePausePanel() {
-        view.getPausePanel().onResume(() -> {
+        view.getPausePanel().setOnResume(() -> {
             // always hits the current gsm field
             if (gsm.get() == GameState.PAUSED) gsm.resume();
         });
 
-        view.getPausePanel().onMainMenu(() -> {
+        view.getPausePanel().setOnMainMenu(() -> {
             Sounds.stopLoop();
             Sounds.MENU.play();
             view.showScreen(GameView.Screen.MAIN_MENU);
         });
 
-        view.getPausePanel().onQuit(() -> {
+        view.getPausePanel().setOnQuit(() -> {
             Sounds.stopLoop();
             System.exit(0);
         });
@@ -210,7 +258,13 @@ public class GameController implements PropertyChangeListener {
                 } else if (s == GameState.PLAYING) {
                     if (!Sounds.isLooping()) Sounds.GAME.loop();
                     view.showScreen(GameView.Screen.MAZE);
-                } else if (s == GameState.GAME_OVER) {
+
+                    // 🔑 update directions because game resumed
+                    updateDirectionPanel();
+                    view.showScreen(GameView.Screen.MAZE);
+                }
+
+                 else if (s == GameState.GAME_OVER) {
                     Sounds.stopLoop();
                     Sounds.LOSE.play();
                     view.showScreen(GameView.Screen.GAME_OVER);
@@ -235,11 +289,13 @@ public class GameController implements PropertyChangeListener {
                 view.getMazePanel().setDoorAttemptsLabel(null);
                 refreshHUDAndGrid();
 
+                // 🔑 update available directions now that the player moved
+                updateDirectionPanel();
+
                 if (game.getMaze().isAtExit()) {
-                    hasWon = true;                 // lock victory
+                    hasWon = true;
                     Sounds.stopLoop();
                     Sounds.WIN.play();
-                    // Optional toast:
                     JOptionPane.showMessageDialog(view, "Congrats! You won the game 🎉",
                             "Victory", JOptionPane.INFORMATION_MESSAGE);
                     view.showScreen(GameView.Screen.VICTORY);
@@ -248,13 +304,21 @@ public class GameController implements PropertyChangeListener {
                 }
             }
 
+
             case "doorBlocked" -> {
                 view.getMazePanel().setDoorAttemptsLabel(null);
                 refreshHUDAndGrid();
+
+                // 🔑 door state changed, so update directions too
+                updateDirectionPanel();
+
                 view.showScreen(GameView.Screen.MAZE);
             }
+
+
         }
     }
+
 
 
     /**
@@ -293,6 +357,26 @@ public class GameController implements PropertyChangeListener {
         Sounds.MENU.play();       // small click on movement attempt
         game.attemptMove(theDir);
     }
+
+    // GameController.java
+
+    /** Updates the Available panel with current exits from the player's room. */
+    private void updateDirectionPanel() {
+        final Maze theMaze = game.getMaze();
+        final boolean theNorth = theMaze.canMove(Direction.NORTH);
+        final boolean theSouth = theMaze.canMove(Direction.SOUTH);
+        final boolean theEast  = theMaze.canMove(Direction.EAST);
+        final boolean theWest  = theMaze.canMove(Direction.WEST);
+
+        // either call the accessor...
+        view.getMazePanel().getDirectionPanel()
+                .setAvailable(theNorth, theSouth, theEast, theWest);
+
+        // ...or, if you add the pass-through on MazePanel, call that instead:
+        // view.getMazePanel().setAvailableDirections(theNorth, theSouth, theEast, theWest);
+    }
+
+
 
     /**
      * This toggles between paused and playing
@@ -350,6 +434,7 @@ public class GameController implements PropertyChangeListener {
         view.getCustomMenuBar().setSaveEnabled(true);
         refreshHUDAndGrid();
         Sounds.GAME.loop();
+        updateDirectionPanel();
 
         view.showScreen(GameView.Screen.MAZE);
     }

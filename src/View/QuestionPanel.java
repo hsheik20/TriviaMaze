@@ -1,4 +1,3 @@
-// View/QuestionPanel.java
 package View;
 
 import Model.MultipleChoiceQuestion;
@@ -8,115 +7,170 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
 
+/**
+ * This represents the question panel which displays trivia questions, answer input field to submit answer
+ * and actions to display a hint, display the answer using cheat, and skipping a question.
+ *
+ * Setter methods used to wire controller call backs
+ */
 public class QuestionPanel extends JPanel {
-    private final JTextArea prompt = new JTextArea();
-    private final JLabel attempts = new JLabel();
-    private final JTextField answer = new JTextField(22);
-    private final JButton submit = new JButton("Answer");
-    private final JButton hint   = new JButton("Hint");
-    private final JButton cheatBtn = new JButton("Cheat");
-    private final JButton skip   = new JButton("Skip");
 
-    // Inline area where we reveal the cheat
-    private final JLabel cheatLbl = new JLabel("");
+    /** Multiline area displaying prompt for question */
+    private final JTextArea myPromptArea = new JTextArea();
+    /** Label showing remaining attempts. */
+    private final JLabel myAttemptsLabel = new JLabel();
+    /** Single-line answer field to answer question. */
+    private final JTextField myAnswerField = new JTextField(22);
+    /** Button to submit current answer. */
+    private final JButton mySubmitButton = new JButton("Answer");
+    /** Button to request a hint (if allowed). */
+    private final JButton myHintButton = new JButton("Hint");
+    /** Button to reveal the answer (cheat). */
+    private final JButton myCheatButton = new JButton("Cheat");
+    /** Button to skip the question (if allowed). */
+    private final JButton mySkipButton = new JButton("Skip");
+    /** Label to display cheat. */
+    private final JLabel myCheatLabel = new JLabel("");
 
-    private Consumer<String> onSubmit;
-    private Runnable onHint, onSkip, onCheat;   // <-- declare onCheat
+    /** Callback invoked on submit with the user's answer string. */
+    private Consumer<String> myOnSubmit;
+    /** Callback invoked when hint user requests a hint. */
+    private Runnable myOnHint;
+    /** Callback invoked when hint user requests to skip question */
+    private Runnable myOnSkip;
+    /** Callback invoked when hint user requests to use a cheat */
+    private Runnable myOnCheat;
 
-    public QuestionPanel(GameView view) {
+    /**
+     * Constructs a QuestionPanel with prompt area in CENTER and controls in SOUTH.
+     *
+     * @param theView the GameView associated with this panel (not used directly; kept for symmetry)
+     */
+    public QuestionPanel(final GameView theView) {
         setLayout(new BorderLayout(10, 10));
 
-        // Question text
-        prompt.setLineWrap(true);
-        prompt.setWrapStyleWord(true);
-        prompt.setEditable(false);
-        add(new JScrollPane(prompt), BorderLayout.CENTER);
+        // Prompt (CENTER)
+        myPromptArea.setLineWrap(true);
+        myPromptArea.setWrapStyleWord(true);
+        myPromptArea.setEditable(false);
+        add(new JScrollPane(myPromptArea), BorderLayout.CENTER);
+
+        // Inline cheat label (above controls)
+        myCheatLabel.setForeground(new Color(90, 90, 90));
+        myCheatLabel.setFont(myCheatLabel.getFont().deriveFont(Font.ITALIC));
+        final JPanel theCheatRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
+        theCheatRow.add(myCheatLabel);
 
         // Controls row (attempts + input + buttons)
-        JPanel controls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 8));
-        controls.add(attempts);
-        controls.add(answer);
-        controls.add(submit);
-        controls.add(hint);
-        controls.add(cheatBtn);
-        controls.add(skip);
+        final JPanel theControls = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 8));
+        theControls.add(myAttemptsLabel);
+        theControls.add(myAnswerField);
+        theControls.add(mySubmitButton);
+        theControls.add(myHintButton);
+        theControls.add(myCheatButton);
+        theControls.add(mySkipButton);
 
-        // Inline cheat label (above the controls)
-        cheatLbl.setForeground(new Color(90, 90, 90));
-        cheatLbl.setFont(cheatLbl.getFont().deriveFont(Font.ITALIC));
-
-        JPanel cheatRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 16, 0));
-        cheatRow.add(cheatLbl);
-
-        // SOUTH stack = cheatRow (top) + controls (bottom)
-        JPanel south = new JPanel();
-        south.setLayout(new BoxLayout(south, BoxLayout.Y_AXIS));
-        south.add(cheatRow);
-        south.add(controls);
-        add(south, BorderLayout.SOUTH);
+        final JPanel theSouth = new JPanel();
+        theSouth.setLayout(new BoxLayout(theSouth, BoxLayout.Y_AXIS));
+        theSouth.add(theCheatRow);
+        theSouth.add(theControls);
+        add(theSouth, BorderLayout.SOUTH);
 
         // Actions
-        submit.addActionListener(e -> { if (onSubmit != null) onSubmit.accept(answer.getText().trim()); });
-        hint.addActionListener(e   -> { if (onHint   != null) onHint.run(); });
-        cheatBtn.addActionListener(e-> { if (onCheat != null) onCheat.run(); });
-        skip.addActionListener(e   -> { if (onSkip   != null) onSkip.run(); });
+        mySubmitButton.addActionListener(e -> {
+            if (myOnSubmit != null) myOnSubmit.accept(myAnswerField.getText().trim());
+        });
+        myHintButton.addActionListener(e -> runIfNotNull(myOnHint));
+        myCheatButton.addActionListener(e -> runIfNotNull(myOnCheat));
+        mySkipButton.addActionListener(e -> runIfNotNull(myOnSkip));
     }
 
-    // inside QuestionPanel
-    public void setQuestion(Question q, int attemptsLeft, boolean canHint, boolean canSkip) {
-        // Build prompt text (add choices if MCQ)
-        String text = q.getPrompt();
-        if (q instanceof MultipleChoiceQuestion mcq) {
-            StringBuilder sb = new StringBuilder(text).append("\n\n");
-            var opts = mcq.getOptions(); // List<String>
-            for (int i = 0; i < opts.size(); i++) {
-                char letter = (char) ('A' + i);
-                sb.append(letter).append(") ").append(opts.get(i)).append('\n');
+    /**
+     * This populates the panel with the given question and UI state.
+     *
+     * @param theQuestion      the question to display
+     * @param theAttemptsLeft  remaining attempts
+     * @param theCanHint       whether the Hint button should be enabled
+     * @param theCanSkip       whether the Skip button should be enabled
+     */
+    public void setQuestion(final Question theQuestion,
+                            final int theAttemptsLeft,
+                            final boolean theCanHint,
+                            final boolean theCanSkip) {
+
+        String theText = theQuestion.getPrompt();
+        if (theQuestion instanceof final MultipleChoiceQuestion theMcq) {
+            final StringBuilder theSb = new StringBuilder(theText).append("\n\n");
+            final var theOptions = theMcq.getOptions();
+            for (int i = 0; i < theOptions.size(); i++) {
+                final char theLetter = (char) ('A' + i);
+                theSb.append(theLetter).append(") ").append(theOptions.get(i)).append('\n');
             }
-            text = sb.toString();
-            answer.setToolTipText("Type A, B, C, or D");
+            theText = theSb.toString();
+            myAnswerField.setToolTipText("Type A, B, C, or D");
         } else {
-            answer.setToolTipText(null);
+            myAnswerField.setToolTipText(null);
         }
 
-        prompt.setText(text);
-        attempts.setText("Attempts left: " + (attemptsLeft == Integer.MAX_VALUE ? "∞" : attemptsLeft));
-        hint.setEnabled(canHint);
-        skip.setEnabled(canSkip);
-        answer.setText("");
-        answer.requestFocusInWindow();
+        myPromptArea.setText(theText);
+        myAttemptsLabel.setText("Attempts left: " + (theAttemptsLeft == Integer.MAX_VALUE ? "∞" : theAttemptsLeft));
+        myHintButton.setEnabled(theCanHint);
+        mySkipButton.setEnabled(theCanSkip);
+        myAnswerField.setText("");
+        myAnswerField.requestFocusInWindow();
     }
 
-
-    public void showHint(String text, int hintsLeft) {
+    /**
+     * This shows a hint message dialog and indicates remaining hints.
+     *
+     * @param theText      the hint text
+     * @param theHintsLeft remaining hints
+     */
+    public void showHint(final String theText, final int theHintsLeft) {
         JOptionPane.showMessageDialog(
                 this,
-                "Hint: " + text + "  (Hints remaining: " + (hintsLeft==Integer.MAX_VALUE ? "∞" : hintsLeft) + ")"
+                "Hint: " + theText + "  (Hints remaining: " + (theHintsLeft == Integer.MAX_VALUE ? "∞" : theHintsLeft) + ")"
         );
     }
 
-    public void showWrongAndUpdate(final int attemptsLeft) {
+    /**
+     * This shows an "Incorrect" dialog, updates attempts readout, and resets the answer field.
+     *
+     * @param theAttemptsLeft remaining attempts
+     */
+    public void showWrongAndUpdate(final int theAttemptsLeft) {
         JOptionPane.showMessageDialog(
                 this,
-                "Wrong.\nAttempts left: " + (attemptsLeft == Integer.MAX_VALUE ? "∞" : attemptsLeft),
+                "Wrong.\nAttempts left: " + (theAttemptsLeft == Integer.MAX_VALUE ? "∞" : theAttemptsLeft),
                 "Incorrect",
                 JOptionPane.ERROR_MESSAGE
         );
-        attempts.setText("Attempts left: " + (attemptsLeft == Integer.MAX_VALUE ? "∞" : attemptsLeft));
-        answer.setText("");
-        answer.requestFocusInWindow();
+        myAttemptsLabel.setText("Attempts left: " + (theAttemptsLeft == Integer.MAX_VALUE ? "∞" : theAttemptsLeft));
+        myAnswerField.setText("");
+        myAnswerField.requestFocusInWindow();
     }
 
-    // ----- NEW: display the correct answer inline -----
-    public void showCheat(String correctAnswer) {
-        cheatLbl.setText("Answer: " + correctAnswer);
-        // Prefer a popup instead? Use:
-        // JOptionPane.showMessageDialog(this, "Answer: " + correctAnswer, "Cheat", JOptionPane.WARNING_MESSAGE);
+    /**
+     * This displays correct answer
+     *
+     * @param theCorrectAnswer the correct answer text to reveal
+     */
+    public void showCheat(final String theCorrectAnswer) {
+        myCheatLabel.setText("Answer: " + theCorrectAnswer);
     }
 
-    // callbacks
-    public void onSubmit(Consumer<String> c){ this.onSubmit = c; }
-    public void onHint(Runnable r){ this.onHint = r; }
-    public void onSkip(Runnable r){ this.onSkip = r; }
-    public void onCheat(Runnable r){ this.onCheat = r; }
+    /** This assigns the submit handler (receives answer string). */
+    public void setOnSubmit(final Consumer<String> theHandler) { myOnSubmit = theHandler; }
+
+    /** This assigns the hint handler. */
+    public void setOnHint(final Runnable theHandler) { myOnHint = theHandler; }
+
+    /** This assigns the skip handler. */
+    public void setOnSkip(final Runnable theHandler) { myOnSkip = theHandler; }
+
+    /** This assigns the cheat handler. */
+    public void setOnCheat(final Runnable theHandler) { myOnCheat = theHandler; }
+
+    /** This runs a task if non-null. */
+    private void runIfNotNull(final Runnable theAction) { if (theAction != null) theAction.run(); }
 }

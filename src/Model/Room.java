@@ -77,6 +77,8 @@ public class Room implements Serializable {
         Objects.requireNonNull(theDir,  "theDir must not be null");
         Objects.requireNonNull(theDoor, "theDoor must not be null");
         myDoors.put(theDir, theDoor);
+        System.out.println("Room[" + myRow + "," + myCol + "] setting " + theDir + " to " + theDoor);
+
     }
 
     /**
@@ -86,7 +88,11 @@ public class Room implements Serializable {
      * @return the door leading in given direction
      */
     public Door getDoor(final Direction theDir) {
-        return myDoors.get(theDir);
+
+        Door door = myDoors.get(theDir);
+        System.out.println("Room[" + myRow + "," + myCol + "] getting " + theDir + ": " + door);
+        return door;
+
     }
 
     /**
@@ -95,6 +101,19 @@ public class Room implements Serializable {
     public Set<Direction> getAvailableDirections() {
         return Set.copyOf(myDoors.keySet());
     }
+
+    public void printDoorsDebug() {
+        System.out.println("Room at [" + myRow + "," + myCol + "] has doors:");
+        for (Direction dir : Direction.values()) {
+            Door door = getDoor(dir);
+            if (door != null) {
+                System.out.println(" - " + dir + ": " + door + " | isBlocked=" + door.isBlocked());
+            } else {
+                System.out.println(" - " + dir + ": No door");
+            }
+        }
+    }
+
 
 
 
