@@ -1,9 +1,13 @@
 package Model;
 
+import java.io.Serializable;
+import java.io.Serial;
 /**
  * This represents an optional hint that can be shown to a player.
  */
-public class Hint {
+public class Hint implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     /*
     The text of hint to display to user
      */

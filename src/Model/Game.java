@@ -4,6 +4,9 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serial;
 import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -16,8 +19,8 @@ public class Game implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    // Event bus for the view/controller
-    private transient PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+    // Event bus for the view/controller - marked transient for proper serialization
+    private transient PropertyChangeSupport pcs;
 
     // World & actors
     private final Maze myMaze;
@@ -40,9 +43,21 @@ public class Game implements Serializable {
         myGSM      = Objects.requireNonNull(theGSM);
         mySettings = Objects.requireNonNull(theSettings);
 
+        // Initialize PropertyChangeSupport
+        initializePropertyChangeSupport();
+
         // sync player to maze's current room
         myPlayer.setX(myMaze.getCurrentRoom().getRow());
         myPlayer.setY(myMaze.getCurrentRoom().getCol());
+    }
+
+    /**
+     * Initialize the PropertyChangeSupport - called during construction and after deserialization
+     */
+    private void initializePropertyChangeSupport() {
+        if (pcs == null) {
+            pcs = new PropertyChangeSupport(this);
+        }
     }
 
     // --- Basic getters ---
@@ -178,14 +193,38 @@ public class Game implements Serializable {
 
     // --- Property change plumbing ---
     public void addListener(final PropertyChangeListener l) {
+        if (pcs == null) {
+            initializePropertyChangeSupport();
+        }
         pcs.addPropertyChangeListener(l);
     }
+
     public void removeListener(final PropertyChangeListener l) {
-        pcs.removePropertyChangeListener(l);
+        if (pcs != null) {
+            pcs.removePropertyChangeListener(l);
+        }
     }
+
+    // --- Custom serialization methods ---
+    @Serial
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        // Write all non-transient fields
+        out.defaultWriteObject();
+        // Note: PropertyChangeSupport is transient and will be recreated on deserialization
+    }
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        // Read all non-transient fields
+        in.defaultReadObject();
+        // Recreate the transient PropertyChangeSupport
+        initializePropertyChangeSupport();
+    }
+
+    // Alternative approach using readResolve (can be used instead of readObject)
     @Serial
     private Object readResolve() {
-        pcs = new PropertyChangeSupport(this);
+        initializePropertyChangeSupport();
         return this;
     }
 }

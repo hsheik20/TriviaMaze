@@ -1,10 +1,15 @@
 package Model;
 
+import java.io.Serializable;
+import java.io.Serial;
+
 /**
  * This abstract class represents a trivia question with a question prompt and an optional hint.
  * Subclasses will implement the logic for checking correctness and providing the correct answer.
  */
-public abstract class Question {
+public abstract class Question implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     /** The question prompt that will be displayed to the player. */
     protected final String myPrompt;
     /** The hint associated with the question to help the player, can be null. */

@@ -3,6 +3,9 @@ package Model;
 import java.sql.*;
 import java.util.*;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 /**
  * Factory to preload and serve trivia questions of various types from SQLite.
  * Supports: Multiple Choice (MC), True/False (TF), and Fill in the Blank (FB).

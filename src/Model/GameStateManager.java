@@ -4,20 +4,41 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.Serial;
 import java.io.Serializable;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
 
 /**
- * Manages state of game (plauing, paused, game over),
+ * Manages state of game (playing, paused, game over),
  * fires property change events when state changes
  */
 public class GameStateManager implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private transient PropertyChangeSupport pcs = new PropertyChangeSupport(this);
+    // Mark as transient for proper serialization
+    private transient PropertyChangeSupport pcs;
+
     /**
      * The current state of game
      */
     private GameState myState = GameState.PLAYING;
+
+    /**
+     * Default constructor - initializes PropertyChangeSupport
+     */
+    public GameStateManager() {
+        initializePropertyChangeSupport();
+    }
+
+    /**
+     * Initialize the PropertyChangeSupport - called during construction and after deserialization
+     */
+    private void initializePropertyChangeSupport() {
+        if (pcs == null) {
+            pcs = new PropertyChangeSupport(this);
+        }
+    }
 
     /**
      * returns current state of game
@@ -35,14 +56,16 @@ public class GameStateManager implements Serializable {
         if (theNewState != myState) {
             final GameState old = myState;
             myState = theNewState;
-            pcs.firePropertyChange("state", old, theNewState);
+            if (pcs != null) {
+                pcs.firePropertyChange("state", old, theNewState);
+            }
         }
     }
 
     /**
      * This pauses the game if it is currently playing
      */
-    public void pause()    {
+    public void pause() {
         if (myState == GameState.PLAYING)
             set(GameState.PAUSED);
     }
@@ -67,6 +90,9 @@ public class GameStateManager implements Serializable {
      * This adds listener for game state changes
      */
     public void addListener(final PropertyChangeListener l) {
+        if (pcs == null) {
+            initializePropertyChangeSupport();
+        }
         pcs.addPropertyChangeListener(l);
     }
 
@@ -74,13 +100,34 @@ public class GameStateManager implements Serializable {
      * This removes listener for game state changes.
      */
     public void removeListener(final PropertyChangeListener l) {
-        pcs.removePropertyChangeListener(l);
+        if (pcs != null) {
+            pcs.removePropertyChangeListener(l);
+        }
     }
 
-    /** Recreate PropertyChangeSupport after deserialization. */
+    // --- Custom serialization methods ---
+    @Serial
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        // Write all non-transient fields
+        out.defaultWriteObject();
+        // Note: PropertyChangeSupport is transient and will be recreated on deserialization
+    }
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        // Read all non-transient fields
+        in.defaultReadObject();
+        // Recreate the transient PropertyChangeSupport
+        initializePropertyChangeSupport();
+    }
+
+    /**
+     * Recreate PropertyChangeSupport after deserialization.
+     * Alternative to readObject method - ensures proper initialization after deserialization
+     */
     @Serial
     private Object readResolve() {
-        pcs = new PropertyChangeSupport(this);
+        initializePropertyChangeSupport();
         return this;
     }
 }
