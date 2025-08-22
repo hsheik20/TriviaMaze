@@ -7,19 +7,44 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Comprehensive test suite for the {@link DifficultySettings} class and its
+ * nested {@link DifficultySettings.Builder} class.
+ * This class uses JUnit 5 to test the construction, configuration,
+ * validation, and immutability of game difficulty settings.
+ *
+ * @author Husein & Chan
+ */
 public class DifficultySettingsTest {
 
+    /**
+     * A {@link DifficultySettings.Builder} instance used as a common starting point
+     * for various tests, initialized before each test method.
+     */
     private DifficultySettings.Builder builder;
 
+    /**
+     * Sets up the test environment before each test method.
+     * Initializes a new {@link DifficultySettings.Builder} with a default
+     * "Test Difficulty" name.
+     */
     @BeforeEach
     void setUp() {
         builder = new DifficultySettings.Builder("Test Difficulty");
     }
 
+    /**
+     * {@code Nested} test class for verifying the construction and default
+     * values of the {@link DifficultySettings.Builder}.
+     */
     @Nested
     @DisplayName("Builder Construction Tests")
     class BuilderConstructionTests {
 
+        /**
+         * Tests that the builder can be successfully created with a valid
+         * difficulty name.
+         */
         @Test
         @DisplayName("Should create builder with required difficulty name")
         void testBuilderWithValidName() {
@@ -30,6 +55,11 @@ public class DifficultySettingsTest {
             assertNotNull(testBuilder, "Builder should be created with valid name");
         }
 
+        /**
+         * Tests that when no configuration methods are called on the builder,
+         * the {@link DifficultySettings} object is built with its predefined
+         * default values.
+         */
         @Test
         @DisplayName("Should build with default values when no methods called")
         void testBuildWithDefaults() {
@@ -52,10 +82,18 @@ public class DifficultySettingsTest {
         }
     }
 
+    /**
+     * {@code Nested} test class for verifying the functionality of individual
+     * configuration methods within the {@link DifficultySettings.Builder}.
+     */
     @Nested
     @DisplayName("Builder Method Tests")
     class BuilderMethodTests {
 
+        /**
+         * Tests that the {@code mazeSize} method correctly sets the maze
+         * width and height.
+         */
         @Test
         @DisplayName("Should set maze size correctly")
         void testMazeSize() {
@@ -69,6 +107,10 @@ public class DifficultySettingsTest {
             assertEquals(8, settings.getMazeHeight());
         }
 
+        /**
+         * Tests that the {@code timeLimit} method correctly sets the time limit
+         * and clamps negative values to 0.
+         */
         @Test
         @DisplayName("Should set time limit with minimum of 0")
         void testTimeLimit() {
@@ -85,6 +127,10 @@ public class DifficultySettingsTest {
             assertEquals(0, settings2.getTimeLimit());
         }
 
+        /**
+         * Tests that the {@code maxHints} method correctly sets the maximum
+         * number of hints and clamps negative values to 0.
+         */
         @Test
         @DisplayName("Should set max hints with minimum of 0")
         void testMaxHints() {
@@ -101,6 +147,10 @@ public class DifficultySettingsTest {
             assertEquals(0, settings2.getMaxHints());
         }
 
+        /**
+         * Tests that the {@code scoring} method correctly sets all
+         * scoring-related parameters.
+         */
         @Test
         @DisplayName("Should set scoring parameters correctly")
         void testScoring() {
@@ -116,6 +166,10 @@ public class DifficultySettingsTest {
             assertEquals(12, settings.getSkipQuestionPenalty());
         }
 
+        /**
+         * Tests that the {@code scoring} method clamps invalid (negative)
+         * scoring parameters to their defined minimum values.
+         */
         @Test
         @DisplayName("Should clamp scoring parameters to minimum values")
         void testScoringWithInvalidValues() {
@@ -131,6 +185,10 @@ public class DifficultySettingsTest {
             assertEquals(0, settings.getSkipQuestionPenalty()); // minimum is 0
         }
 
+        /**
+         * Tests that the {@code allowSkipping} method correctly sets
+         * the boolean flag for allowing question skipping.
+         */
         @Test
         @DisplayName("Should set allow skipping correctly")
         void testAllowSkipping() {
@@ -147,6 +205,10 @@ public class DifficultySettingsTest {
             assertFalse(settings2.isAllowSkipping());
         }
 
+        /**
+         * Tests that the {@code questionDifficultyRange} method correctly
+         * sets the minimum and maximum question difficulty levels.
+         */
         @Test
         @DisplayName("Should set question difficulty range correctly")
         void testQuestionDifficultyRange() {
@@ -160,6 +222,11 @@ public class DifficultySettingsTest {
             assertEquals(5, settings.getQuestionDifficultyMax());
         }
 
+        /**
+         * Tests that the {@code questionDifficultyRange} method ensures
+         * the maximum difficulty is at least equal to the minimum difficulty.
+         * If max is set less than min, max should be adjusted to min.
+         */
         @Test
         @DisplayName("Should ensure max difficulty is at least equal to min")
         void testQuestionDifficultyRangeValidation() {
@@ -172,6 +239,10 @@ public class DifficultySettingsTest {
             assertEquals(5, settings.getQuestionDifficultyMax()); // Should be adjusted to min
         }
 
+        /**
+         * Tests that the {@code questionDifficultyRange} method ensures
+         * the minimum difficulty is at least 1, clamping any lower values.
+         */
         @Test
         @DisplayName("Should ensure minimum difficulty is at least 1")
         void testQuestionDifficultyMinimum() {
@@ -186,10 +257,18 @@ public class DifficultySettingsTest {
         }
     }
 
+    /**
+     * {@code Nested} test class for verifying validation rules applied
+     * during the construction of {@link DifficultySettings} via its builder.
+     */
     @Nested
     @DisplayName("Builder Validation Tests")
     class BuilderValidationTests {
 
+        /**
+         * Tests that building with a {@code null} difficulty name
+         * throws an {@link IllegalArgumentException}.
+         */
         @Test
         @DisplayName("Should throw exception for null difficulty name")
         void testNullDifficultyName() {
@@ -201,6 +280,10 @@ public class DifficultySettingsTest {
                     "Should throw exception for null difficulty name");
         }
 
+        /**
+         * Tests that building with an empty string as the difficulty name
+         * throws an {@link IllegalArgumentException}.
+         */
         @Test
         @DisplayName("Should throw exception for empty difficulty name")
         void testEmptyDifficultyName() {
@@ -212,6 +295,10 @@ public class DifficultySettingsTest {
                     "Should throw exception for empty difficulty name");
         }
 
+        /**
+         * Tests that building with a difficulty name consisting only of
+         * whitespace throws an {@link IllegalArgumentException}.
+         */
         @Test
         @DisplayName("Should throw exception for whitespace-only difficulty name")
         void testWhitespaceOnlyDifficultyName() {
@@ -223,6 +310,10 @@ public class DifficultySettingsTest {
                     "Should throw exception for whitespace-only difficulty name");
         }
 
+        /**
+         * Tests that setting a maze size smaller than the minimum allowed (3x3)
+         * throws an {@link IllegalArgumentException}.
+         */
         @Test
         @DisplayName("Should throw exception for maze size too small")
         void testMazeTooSmall() {
@@ -232,6 +323,10 @@ public class DifficultySettingsTest {
             }, "Should throw exception for maze smaller than 3x3");
         }
 
+        /**
+         * Tests that setting a maze size larger than the maximum allowed (20x20)
+         * throws an {@link IllegalArgumentException}.
+         */
         @Test
         @DisplayName("Should throw exception for maze size too large")
         void testMazeTooLarge() {
@@ -241,6 +336,10 @@ public class DifficultySettingsTest {
             }, "Should throw exception for maze larger than 20x20");
         }
 
+        /**
+         * Tests that the builder accepts maze sizes at the valid boundaries
+         * (minimum 3x3 and maximum 20x20).
+         */
         @Test
         @DisplayName("Should accept boundary maze sizes")
         void testBoundaryMazeSizes() {
@@ -260,10 +359,19 @@ public class DifficultySettingsTest {
         }
     }
 
+    /**
+     * {@code Nested} test class for verifying the fluent interface
+     * capabilities of the {@link DifficultySettings.Builder}.
+     */
     @Nested
     @DisplayName("Method Chaining Tests")
     class MethodChainingTests {
 
+        /**
+         * Tests that multiple configuration methods can be chained together
+         * to build a {@link DifficultySettings} object, and all settings
+         * are applied correctly.
+         */
         @Test
         @DisplayName("Should support method chaining")
         void testMethodChaining() {
@@ -293,10 +401,18 @@ public class DifficultySettingsTest {
         }
     }
 
+    /**
+     * {@code Nested} test class for verifying specific methods of the
+     * {@link DifficultySettings} class itself, beyond its construction.
+     */
     @Nested
     @DisplayName("DifficultySettings Method Tests")
     class DifficultySettingsMethodTests {
 
+        /**
+         * Tests the {@code hasTimeLimit} method to ensure it correctly
+         * indicates whether a time limit is active (greater than 0).
+         */
         @Test
         @DisplayName("Should correctly identify if time limit exists")
         void testHasTimeLimit() {
@@ -313,6 +429,11 @@ public class DifficultySettingsTest {
             assertFalse(withoutTimeLimit.hasTimeLimit());
         }
 
+        /**
+         * Tests the {@code toString} method to ensure it provides a
+         * meaningful string representation of the difficulty settings,
+         * including key parameters.
+         */
         @Test
         @DisplayName("Should provide correct toString representation")
         void testToString() {
@@ -326,15 +447,25 @@ public class DifficultySettingsTest {
             // Assert
             assertTrue(result.contains("Test Difficulty"));
             assertTrue(result.contains("10x8"));
-            assertTrue(result.contains("40%"));
-            assertTrue(result.contains("30%"));
+            assertTrue(result.contains("40%")); // Default correct answer ratio (40% of max points for maze)
+            assertTrue(result.contains("30%")); // Default wrong answer penalty ratio (30% of max points for maze)
         }
     }
 
+    /**
+     * {@code Nested} test class for verifying the immutability and
+     * serializability of the {@link DifficultySettings} object.
+     */
     @Nested
     @DisplayName("Immutability Tests")
     class ImmutabilityTests {
 
+        /**
+         * Tests that once a {@link DifficultySettings} object is created,
+         * its internal state cannot be modified, implying immutability.
+         * This is verified by checking that getters return consistent values
+         * and by the absence of public setters.
+         */
         @Test
         @DisplayName("Should be immutable after creation")
         void testImmutability() {
@@ -350,8 +481,16 @@ public class DifficultySettingsTest {
             int width1 = settings.getMazeWidth();
             int width2 = settings.getMazeWidth();
             assertEquals(width1, width2, "Maze width should be consistent");
+
+            // Further checks could involve reflection to assert no public setters exist.
+            // For now, consistent getter returns are sufficient for this test's scope.
         }
 
+        /**
+         * Tests that the {@link DifficultySettings} class implements
+         * the {@link java.io.Serializable} interface, allowing its instances
+         * to be converted into a byte stream.
+         */
         @Test
         @DisplayName("Should implement Serializable")
         void testSerializable() {

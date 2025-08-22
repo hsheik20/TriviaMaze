@@ -5,6 +5,8 @@ import java.util.List;
 /**
  * Multiple-choice question that validates answers strictly as letters A/B/C/D.
  * The correct answer index is 0-based (0 -> A, 1 -> B, 2 -> C, 3 -> D).
+ *
+ * @author Husein & Chan
  */
 public class MultipleChoiceQuestion extends Question {
     private final List<String> myOptions;   // immutable copy

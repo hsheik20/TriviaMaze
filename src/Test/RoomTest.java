@@ -10,11 +10,24 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * A test class for the {@link Room} model.
+ * It verifies the correct functionality of the Room class, including
+ * coordinate handling, visited state management, door associations,
+ * and the integrity of available directions.
+ *
+ * @author Husein
+ */
 class RoomTest {
     private Room room;
     private Room neighbor;
     private Door door;
 
+    /**
+     * Sets up the test environment before each test method.
+     * Initializes a new {@link Room} object at coordinates (1, 2),
+     * a neighboring room, and a {@link Door} connecting them.
+     */
     @BeforeEach
     void setUp() {
         room = new Room(1, 2);
@@ -22,12 +35,21 @@ class RoomTest {
         door = new Door(room, neighbor, null);
     }
 
+    /**
+     * Tests that the {@code getRow()} and {@code getCol()} methods
+     * return the correct coordinates that the room was initialized with.
+     */
     @Test
     void testCoordinates() {
         assertEquals(1, room.getRow());
         assertEquals(2, room.getCol());
     }
 
+    /**
+     * Tests the visited state flags of the room. It verifies that a room
+     * is initially unvisited, can be marked as visited, and can have
+     * its visited state cleared.
+     */
     @Test
     void testVisitedFlags() {
         assertFalse(room.isVisited(), "Should be unvisited initially");
@@ -37,6 +59,11 @@ class RoomTest {
         assertFalse(room.isVisited(), "Should be unvisited after clearVisited");
     }
 
+    /**
+     * Tests the {@code setDoor()} and {@code getDoor()} methods.
+     * It ensures that a door can be correctly associated with a direction
+     * and that retrieving the door for that direction works as expected.
+     */
     @Test
     void testSetAndGetDoor() {
         assertNull(room.getDoor(Direction.EAST));
@@ -45,6 +72,11 @@ class RoomTest {
         assertNull(room.getDoor(Direction.NORTH));
     }
 
+    /**
+     * Tests the {@code getAvailableDirections()} method. It verifies that
+     * the returned set of directions accurately reflects the doors that
+     * have been set for the room.
+     */
     @Test
     void testAvailableDirections() {
         room.setDoor(Direction.EAST, door);
@@ -53,6 +85,11 @@ class RoomTest {
         assertTrue(dirs.contains(Direction.EAST));
     }
 
+    /**
+     * Tests the immutability of the set returned by {@code getAvailableDirections()}.
+     * It ensures that the set is a copy or unmodifiable view, and attempting
+     * to modify it throws an {@link UnsupportedOperationException}.
+     */
     @Test
     void testAvailableDirectionsIsUnmodifiable() {
         room.setDoor(Direction.EAST, door);
@@ -60,12 +97,22 @@ class RoomTest {
         assertThrows(UnsupportedOperationException.class, () -> dirs.add(Direction.NORTH));
     }
 
+    /**
+     * Tests the input validation of the {@code setDoor()} method.
+     * It verifies that passing {@code null} for either the direction or the
+     * door throws a {@link NullPointerException}.
+     */
     @Test
     void testInvalidArgs() {
         assertThrows(NullPointerException.class, () -> room.setDoor(null, door));
         assertThrows(NullPointerException.class, () -> room.setDoor(Direction.EAST, null));
     }
 
+    /**
+     * Tests the constructor's input validation.
+     * It ensures that the constructor throws an {@link IllegalArgumentException}
+     * if negative values are provided for the row or column coordinates.
+     */
     @Test
     void testNegativeCtorArgs() {
         assertThrows(IllegalArgumentException.class, () -> new Room(-1, 0));

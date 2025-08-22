@@ -2,6 +2,8 @@ package Model;
 
 /**
  * This represents a true/false trivia question.
+ *
+ * @author Husein & Chan
  */
 public class TrueFalseQuestion extends Question {
     private final boolean myCorrectAnswer;

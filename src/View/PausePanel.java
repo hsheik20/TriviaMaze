@@ -4,33 +4,47 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * This class represents a pause menu with actions to resume the game,
- * return to main menu, or quit the game.
+ * A Swing panel that serves as the pause menu for the game.
+ * This panel is displayed when the game is paused, providing the player with
+ * options to resume the game, return to the main menu, or quit the application.
+ * It uses a listener-based design, where a controller can "wire" actions
+ * to its buttons.
+ *
+ * @author Husein & Chan
  */
 public class PausePanel extends JPanel {
 
-    /** Callback fired when the user chooses to resume game. */
+    /**
+     * The callback to be executed when the "Resume" button is clicked.
+     */
     private Runnable myOnResume;
 
-    /** Callback fired when the user chooses to return to main menu. */
+    /**
+     * The callback to be executed when the "Main Menu" button is clicked.
+     */
     private Runnable myOnMainMenu;
 
-    /** Callback fired when the user chooses to quit game. */
+    /**
+     * The callback to be executed when the "Quit" button is clicked.
+     */
     private Runnable myOnQuit;
 
     /**
-     * Constructs a PausePanel with three vertically stacked buttons:
-     * Resume, Main Menu, and Quit.
+     * Constructs a {@code PausePanel}.
+     * It sets up the panel's layout and background color, and then creates
+     * and wires three vertically stacked buttons: "Resume," "Main Menu," and "Quit."
      *
-     * @param theView the GameView associated with this panel
+     * @param theView The parent {@link GameView} instance. This reference is
+     * not used in the panel's current logic but is included for consistency
+     * with other view components.
      */
     public PausePanel(final GameView theView) {
         setLayout(new GridBagLayout());
         setBackground(new Color(245, 245, 245));
 
-        final JButton theResume   = new JButton("Resume");
+        final JButton theResume = new JButton("Resume");
         final JButton theMainMenu = new JButton("Main Menu");
-        final JButton theQuit     = new JButton("Quit");
+        final JButton theQuit = new JButton("Quit");
 
         theResume.addActionListener(e -> runIfNotNull(myOnResume));
         theMainMenu.addActionListener(e -> runIfNotNull(myOnMainMenu));
@@ -46,36 +60,36 @@ public class PausePanel extends JPanel {
     }
 
     /**
-     * This sets up action when the user presses "resume".
+     * Sets the action to be performed when the "Resume" button is clicked.
      *
-     * @param theAction the Runnable to execute
+     * @param theAction The {@link Runnable} to execute.
      */
     public void setOnResume(final Runnable theAction) {
         myOnResume = theAction;
     }
 
     /**
-     *This sets up action when the user presses "Main Menu".
+     * Sets the action to be performed when the "Main Menu" button is clicked.
      *
-     * @param theAction the Runnable to execute
+     * @param theAction The {@link Runnable} to execute.
      */
     public void setOnMainMenu(final Runnable theAction) {
         myOnMainMenu = theAction;
     }
 
     /**
-     * This sets up action when the user presses "Quit".
+     * Sets the action to be performed when the "Quit" button is clicked.
      *
-     * @param theAction the Runnable to execute
+     * @param theAction The {@link Runnable} to execute.
      */
     public void setOnQuit(final Runnable theAction) {
         myOnQuit = theAction;
     }
 
     /**
-     * This runs given action if it is not null.
+     * A helper method to safely execute a {@link Runnable} only if it is not null.
      *
-     * @param theAction the Runnable to execute when non-null
+     * @param theAction The {@link Runnable} to execute when non-null.
      */
     private void runIfNotNull(final Runnable theAction) {
         if (theAction != null) {

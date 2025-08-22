@@ -1,30 +1,56 @@
-// View/GameMenuBar.java
 package View;
 
 import javax.swing.*;
 
 /**
- * This represents a MenuBar, it holds the main menu bar at the top of the game with actions to pause/resume game, play new game,
- * and quit game. Holds setter methods for wiring controller actions.
+ * A custom {@link JMenuBar} for the game's main window.
+ * This menu bar provides standard game actions like starting a new game,
+ * saving, loading, pausing, and quitting, as well as accessing help information.
+ * It follows a listener-based design, providing public setter methods for a
+ * controller to "wire" its logic to the menu item clicks.
+ *
+ * @author Husein & Chan
  */
 public class MenuBar extends JMenuBar {
 
-    /** Initializing callbacks wired to controller. */
+    /**
+     * Callback for the "New Game" menu item. This is a {@link Runnable}
+     * provided by the controller.
+     */
     private Runnable myOnNewGame;
+
+    /**
+     * Callback for the "Pause Game" menu item.
+     */
     private Runnable myOnPauseToggle;
+
+    /**
+     * Callback for the "Save Game" menu item.
+     */
     private Runnable myOnSaveGame;
+
+    /**
+     * Callback for the "Quit Game" menu item.
+     */
     private Runnable myOnQuitGame;
 
-    // ----- New optional callbacks to support spec-compliant menus -----
-    /** Callback for "Load Game". */
+    /**
+     * Callback for the "Load Game" menu item.
+     */
     private Runnable myOnLoadGame;
-    /** Callback for "Instructions" dialog. */
+
+    /**
+     * Callback for the "Instructions" menu item.
+     */
     private Runnable myOnShowInstructions;
-    /** Callback for "About" dialog. */
+
+    /**
+     * Callback for the "About" menu item.
+     */
     private Runnable myOnShowAbout;
 
-    /** Initializing main menu references. */
-    private final JMenuItem myNEWITEM   = new JMenuItem("New Game");
+    // ----- Menu item references for all menu options -----
+    private final JMenuItem myNEWITEM = new JMenuItem("New Game");
     private final JMenuItem myPAUSEITEM = new JMenuItem("Pause Game");
     private final JMenuItem mySAVEITEM  = new JMenuItem("Save Game");
     private final JMenuItem myQUITITEM  = new JMenuItem("Quit Game");
@@ -36,114 +62,144 @@ public class MenuBar extends JMenuBar {
     private final JMenuItem myABOUTITEM = new JMenuItem("About");
 
     /**
-     * Constructs the MenuBar with File, Game, and Help menus.
+     * Constructs the {@code MenuBar} and initializes all menus and menu items.
+     * It sets up the "File," "Game," and "Help" menus and wires their action
+     * listeners to the corresponding internal callbacks.
      */
     public MenuBar() {
-        // ===== File =====
+        // ===== File Menu =====
         final JMenu theFile = new JMenu("File");
-
         mySAVEITEM.addActionListener(e -> runIfNotNull(myOnSaveGame));
         myLOADITEM.addActionListener(e -> runIfNotNull(myOnLoadGame));
         myEXITITEM.addActionListener(e -> runIfNotNull(myOnQuitGame));
-
         theFile.add(mySAVEITEM);
         theFile.add(myLOADITEM);
         theFile.addSeparator();
         theFile.add(myEXITITEM);
 
-        // ===== Game =====
+        // ===== Game Menu =====
         final JMenu theGame = new JMenu("Game");
-
-        // click handlers
-        myNEWITEM.addActionListener(e   -> runIfNotNull(myOnNewGame));
+        myNEWITEM.addActionListener(e -> runIfNotNull(myOnNewGame));
         myPAUSEITEM.addActionListener(e -> runIfNotNull(myOnPauseToggle));
-        myQUITITEM.addActionListener(e  -> runIfNotNull(myOnQuitGame));
-
+        myQUITITEM.addActionListener(e -> runIfNotNull(myOnQuitGame));
         theGame.add(myNEWITEM);
         theGame.add(myPAUSEITEM);
         theGame.addSeparator();
         theGame.add(myQUITITEM);
 
-        // ===== Help =====
+        // ===== Help Menu =====
         final JMenu theHelp = new JMenu("Help");
-
         myINSTRUCTIONSITEM.addActionListener(e -> runIfNotNull(myOnShowInstructions));
-        myABOUTITEM.addActionListener(e       -> runIfNotNull(myOnShowAbout));
-
+        myABOUTITEM.addActionListener(e -> runIfNotNull(myOnShowAbout));
         theHelp.add(myINSTRUCTIONSITEM);
         theHelp.add(myABOUTITEM);
 
-        // add menus to bar
+        // Add menus to the menu bar
         add(theFile);
         add(theGame);
         add(theHelp);
     }
 
+    // ======================
+    // == Wiring Setters   ==
+    // ======================
+
     /**
-     * This sets the "New Game" action.
-     * @param theAction the Runnable to execute when the user selects New Game
+     * Sets the action to be performed when the "New Game" menu item is selected.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
-    public void setOnNewGame(final Runnable theAction) { myOnNewGame = theAction; }
+    public void setOnNewGame(final Runnable theAction) {
+        this.myOnNewGame = theAction;
+    }
 
     /**
-     * This sets the "Pause/Resume" toggle action.
-     * @param theAction the Runnable to execute when the user selects Pause/Resume
+     * Sets the action for the "Pause Game" menu item, which typically toggles
+     * the game's paused state.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
-    public void setOnPauseToggle(final Runnable theAction) { myOnPauseToggle = theAction; }
+    public void setOnPauseToggle(final Runnable theAction) {
+        this.myOnPauseToggle = theAction;
+    }
 
     /**
-     * This sets the "Save Game" action.
-     * @param theAction the Runnable to execute when the user selects Save Game
+     * Sets the action for the "Save Game" menu item.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
-    public void setOnSaveGame(final Runnable theAction) { myOnSaveGame = theAction; }
+    public void setOnSaveGame(final Runnable theAction) {
+        this.myOnSaveGame = theAction;
+    }
 
     /**
-     * This sets the "Quit Game" action.
-     * @param theAction the Runnable to execute when the user selects Quit Game
+     * Sets the action for the "Quit Game" and "Exit" menu items.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
-    public void setOnQuitGame(final Runnable theAction) { myOnQuitGame = theAction; }
-
-    // ----- New setters for added items -----
+    public void setOnQuitGame(final Runnable theAction) {
+        this.myOnQuitGame = theAction;
+    }
 
     /**
-     * This sets the "Load Game" action.
-     * @param theAction the Runnable to execute when the user selects Load Game
+     * Sets the action for the "Load Game" menu item.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
-    public void setOnLoadGame(final Runnable theAction) { myOnLoadGame = theAction; }
+    public void setOnLoadGame(final Runnable theAction) {
+        this.myOnLoadGame = theAction;
+    }
 
     /**
-     * This sets the "Instructions" action under Help.
-     * @param theAction the Runnable to execute when the user selects Instructions
+     * Sets the action for the "Instructions" menu item.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
-    public void setOnShowInstructions(final Runnable theAction) { myOnShowInstructions = theAction; }
+    public void setOnShowInstructions(final Runnable theAction) {
+        this.myOnShowInstructions = theAction;
+    }
 
     /**
-     * This sets the "About" action under Help.
-     * @param theAction the Runnable to execute when the user selects About
+     * Sets the action for the "About" menu item.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
-    public void setOnShowAbout(final Runnable theAction) { myOnShowAbout = theAction; }
+    public void setOnShowAbout(final Runnable theAction) {
+        this.myOnShowAbout = theAction;
+    }
+
+    // ======================
+    // == State Setters    ==
+    // ======================
 
     /**
-     * This updates the Pause/Resume menu item label based on current state.
-     * @param thePaused whether the game is currently paused
+     * Updates the text of the "Pause/Resume" menu item based on the
+     * current paused state of the game.
+     *
+     * @param thePaused {@code true} if the game is paused, {@code false} otherwise.
      */
     public void setPaused(final boolean thePaused) {
         myPAUSEITEM.setText(thePaused ? "Resume Game" : "Pause Game");
     }
 
     /**
-     * This enables or disables the Save menu item
-     * @param theEnabled true to enable, false to disable
+     * Enables or disables the "Save Game" menu item. This is typically used
+     * to prevent saving when it's not a valid operation (e.g., at the main menu).
+     *
+     * @param theEnabled {@code true} to enable, {@code false} to disable.
      */
     public void setSaveEnabled(final boolean theEnabled) {
         mySAVEITEM.setEnabled(theEnabled);
     }
 
     /**
-     * This sets up an action if it exists.
-     * @param theAction the Runnable to run if non-null
+     * A helper method to safely execute a {@link Runnable} only if it is not null.
+     *
+     * @param theAction The {@link Runnable} to execute.
      */
     private void runIfNotNull(final Runnable theAction) {
-        if (theAction != null) theAction.run();
+        if (theAction != null) {
+            theAction.run();
+        }
     }
 }

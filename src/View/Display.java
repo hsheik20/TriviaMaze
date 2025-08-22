@@ -8,6 +8,8 @@ import java.util.Set;
 /**
  * Console UI helpers (title, menus, HUD, grid, prompts, sfx).
  * Pure view: no game logic here.
+ *
+ * @author Husein
  */
 public final class Display {
     private Display() {}

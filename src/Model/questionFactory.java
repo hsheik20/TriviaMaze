@@ -6,6 +6,8 @@ import java.util.*;
 /**
  * Factory to preload and serve trivia questions of various types from SQLite.
  * Supports: Multiple Choice (MC), True/False (TF), and Fill in the Blank (FB).
+ *
+ * @author Husein & Chan
  */
 public class questionFactory {
 

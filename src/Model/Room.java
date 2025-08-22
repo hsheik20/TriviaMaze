@@ -8,6 +8,8 @@ import java.util.Set;
 
 /**
  * This represents a room, a cell in trivia maze. It looks which doors lead out to other doors in each of 4 directions.
+ *
+ * @author Husein & Chan
  */
 public class Room implements Serializable {
     private static final long serialVersionUID = 1L;

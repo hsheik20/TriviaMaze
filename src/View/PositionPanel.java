@@ -1,25 +1,31 @@
-// View/PositionPanel.java
 package View;
 
 import javax.swing.*;
 import java.awt.*;
 
 /**
- * This represents a position panel detailing the users current coordinate grid position in the game
- * and the distance to reaching the exit and winning game.
+ * A Swing panel that displays the player's current coordinates and the
+ * estimated distance to the maze's exit. It is a read-only, informational
+ * component of the game's graphical user interface.
  *
+ * @author Husein & Chan
  */
 public class PositionPanel extends JPanel {
 
-
-    /** Label displays the current (x,y) position. */
+    /**
+     * A label that displays the player's current (x, y) coordinates.
+     */
     private final JLabel myCurrentLabel  = new JLabel("Current: (0,0)", SwingConstants.CENTER);
-    /** Label displays the distance to the exit */
-    private final JLabel myDistanceLabel = new JLabel("To exit: —", SwingConstants.CENTER);
-
 
     /**
-     * Constructs a PositionPanel with current position, distance to exit, and attempts.
+     * A label that displays the distance or path information to the exit.
+     */
+    private final JLabel myDistanceLabel = new JLabel("To exit: —", SwingConstants.CENTER);
+
+    /**
+     * Constructs a {@code PositionPanel}.
+     * It sets up the panel's layout, adds a titled border, and initializes
+     * the labels for current position and distance to the exit.
      */
     public PositionPanel() {
         setLayout(new BorderLayout());
@@ -31,28 +37,26 @@ public class PositionPanel extends JPanel {
         theCenter.add(myCurrentLabel);
         theCenter.add(myDistanceLabel);
 
-
         add(theCenter, BorderLayout.CENTER);
     }
 
     /**
-     * This updates the displayed (x,y) position.
+     * Updates the text of the current position label with the specified coordinates.
      *
-     * @param theX the current x-coordinate
-     * @param theY the current y-coordinate
+     * @param theX The current x-coordinate (row).
+     * @param theY The current y-coordinate (column).
      */
     public void setPosition(final int theX, final int theY) {
         myCurrentLabel.setText("Current: (" + theX + "," + theY + ")");
     }
 
     /**
-     * This updates the distance displayed
+     * Updates the text of the distance-to-exit label.
      *
-     * @param theText the distance readout to display
+     * @param theText The string to be displayed, which can be a number
+     * (e.g., "5") or a message (e.g., "No path").
      */
     public void setDistanceText(final String theText) {
         myDistanceLabel.setText("To exit: " + theText);
     }
-
-
 }

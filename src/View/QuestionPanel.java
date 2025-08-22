@@ -8,43 +8,66 @@ import java.awt.*;
 import java.util.function.Consumer;
 
 /**
- * This represents the question panel which displays trivia questions, answer input field to submit answer
- * and actions to display a hint, display the answer using cheat, and skipping a question.
+ * A Swing panel that displays a trivia question and provides controls for
+ * answering, getting a hint, skipping, or cheating.
+ * This panel is responsible for presenting the question to the user and
+ * capturing their input, which is then handled by a controller via a set of
+ * public callback setters.
  *
- * Setter methods used to wire controller call backs
+ * @author Husein & Chan
  */
 public class QuestionPanel extends JPanel {
 
-    /** Multiline area displaying prompt for question */
+    /** Multiline text area for displaying the question prompt. */
     private final JTextArea myPromptArea = new JTextArea();
-    /** Label showing remaining attempts. */
+
+    /** Label to show the number of remaining attempts for the current question. */
     private final JLabel myAttemptsLabel = new JLabel();
-    /** Single-line answer field to answer question. */
+
+    /** A single-line text field where the user can type their answer. */
     private final JTextField myAnswerField = new JTextField(22);
-    /** Button to submit current answer. */
+
+    /** Button to submit the user's answer. */
     private final JButton mySubmitButton = new JButton("Answer");
-    /** Button to request a hint (if allowed). */
+
+    /** Button to request a hint, enabled only if hints are available. */
     private final JButton myHintButton = new JButton("Hint");
-    /** Button to reveal the answer (cheat). */
+
+    /** Button to reveal the correct answer (a cheat). */
     private final JButton myCheatButton = new JButton("Cheat");
-    /** Button to skip the question (if allowed). */
+
+    /** Button to skip the current question, enabled only if skipping is allowed. */
     private final JButton mySkipButton = new JButton("Skip");
-    /** Label to display cheat. */
+
+    /** Label to display the correct answer when the user cheats. */
     private final JLabel myCheatLabel = new JLabel("");
 
-    /** Callback invoked on submit with the user's answer string. */
+    /**
+     * A callback invoked with the user's answer string when the "Answer" button is clicked.
+     */
     private Consumer<String> myOnSubmit;
-    /** Callback invoked when hint user requests a hint. */
+
+    /**
+     * A callback invoked when the user requests a hint.
+     */
     private Runnable myOnHint;
-    /** Callback invoked when hint user requests to skip question */
+
+    /**
+     * A callback invoked when the user requests to skip the question.
+     */
     private Runnable myOnSkip;
-    /** Callback invoked when hint user requests to use a cheat */
+
+    /**
+     * A callback invoked when the user requests to see the correct answer (cheat).
+     */
     private Runnable myOnCheat;
 
     /**
-     * Constructs a QuestionPanel with prompt area in CENTER and controls in SOUTH.
+     * Constructs a {@code QuestionPanel}.
+     * It sets up the layout, initializes all UI components (labels, text areas, buttons),
+     * and wires the button actions to their corresponding internal callbacks.
      *
-     * @param theView the GameView associated with this panel (not used directly; kept for symmetry)
+     * @param theView The parent {@link GameView} associated with this panel.
      */
     public QuestionPanel(final GameView theView) {
         setLayout(new BorderLayout(10, 10));
@@ -76,7 +99,7 @@ public class QuestionPanel extends JPanel {
         theSouth.add(theControls);
         add(theSouth, BorderLayout.SOUTH);
 
-        // Actions
+        // Wire actions to buttons
         mySubmitButton.addActionListener(e -> {
             if (myOnSubmit != null) myOnSubmit.accept(myAnswerField.getText().trim());
         });
@@ -86,12 +109,13 @@ public class QuestionPanel extends JPanel {
     }
 
     /**
-     * This populates the panel with the given question and UI state.
+     * Populates the panel with a new question and updates the UI elements
+     * according to the current game state (attempts, hint/skip availability).
      *
-     * @param theQuestion      the question to display
-     * @param theAttemptsLeft  remaining attempts
-     * @param theCanHint       whether the Hint button should be enabled
-     * @param theCanSkip       whether the Skip button should be enabled
+     * @param theQuestion     The {@link Question} to be displayed.
+     * @param theAttemptsLeft The number of remaining attempts for this question.
+     * @param theCanHint      {@code true} if the hint button should be enabled.
+     * @param theCanSkip      {@code true} if the skip button should be enabled.
      */
     public void setQuestion(final Question theQuestion,
                             final int theAttemptsLeft,
@@ -121,10 +145,10 @@ public class QuestionPanel extends JPanel {
     }
 
     /**
-     * This shows a hint message dialog and indicates remaining hints.
+     * Displays a hint message to the user in a pop-up dialog.
      *
-     * @param theText      the hint text
-     * @param theHintsLeft remaining hints
+     * @param theText      The hint text to display.
+     * @param theHintsLeft The number of hints remaining.
      */
     public void showHint(final String theText, final int theHintsLeft) {
         JOptionPane.showMessageDialog(
@@ -134,9 +158,10 @@ public class QuestionPanel extends JPanel {
     }
 
     /**
-     * This shows an "Incorrect" dialog, updates attempts readout, and resets the answer field.
+     * Notifies the user that their answer was incorrect via a pop-up dialog,
+     * and updates the attempts counter on the panel.
      *
-     * @param theAttemptsLeft remaining attempts
+     * @param theAttemptsLeft The number of remaining attempts.
      */
     public void showWrongAndUpdate(final int theAttemptsLeft) {
         JOptionPane.showMessageDialog(
@@ -151,26 +176,50 @@ public class QuestionPanel extends JPanel {
     }
 
     /**
-     * This displays correct answer
+     * Displays the correct answer on the panel's cheat label.
      *
-     * @param theCorrectAnswer the correct answer text to reveal
+     * @param theCorrectAnswer The correct answer string to reveal.
      */
     public void showCheat(final String theCorrectAnswer) {
         myCheatLabel.setText("Answer: " + theCorrectAnswer);
     }
 
-    /** This assigns the submit handler (receives answer string). */
-    public void setOnSubmit(final Consumer<String> theHandler) { myOnSubmit = theHandler; }
+    // ======================
+    // == Wiring Setters   ==
+    // ======================
 
-    /** This assigns the hint handler. */
-    public void setOnHint(final Runnable theHandler) { myOnHint = theHandler; }
+    /**
+     * Sets the handler for the "Answer" button.
+     *
+     * @param theHandler A consumer that receives the user's answer string.
+     */
+    public void setOnSubmit(final Consumer<String> theHandler) { this.myOnSubmit = theHandler; }
 
-    /** This assigns the skip handler. */
-    public void setOnSkip(final Runnable theHandler) { myOnSkip = theHandler; }
+    /**
+     * Sets the handler for the "Hint" button.
+     *
+     * @param theHandler The action to run when a hint is requested.
+     */
+    public void setOnHint(final Runnable theHandler) { this.myOnHint = theHandler; }
 
-    /** This assigns the cheat handler. */
-    public void setOnCheat(final Runnable theHandler) { myOnCheat = theHandler; }
+    /**
+     * Sets the handler for the "Skip" button.
+     *
+     * @param theHandler The action to run when a skip is requested.
+     */
+    public void setOnSkip(final Runnable theHandler) { this.myOnSkip = theHandler; }
 
-    /** This runs a task if non-null. */
+    /**
+     * Sets the handler for the "Cheat" button.
+     *
+     * @param theHandler The action to run when a cheat is requested.
+     */
+    public void setOnCheat(final Runnable theHandler) { this.myOnCheat = theHandler; }
+
+    /**
+     * A helper method to safely run a {@link Runnable} only if it is not null.
+     *
+     * @param theAction The action to execute.
+     */
     private void runIfNotNull(final Runnable theAction) { if (theAction != null) theAction.run(); }
 }

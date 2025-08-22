@@ -7,6 +7,8 @@ import java.io.Serializable;
  *
  * Represents rectangular grid composed of rooms connected by doors making up trivia maze
  * supports movement, state tracking, and reset
+ *
+ * @author Husein
  */
 public class Maze implements Serializable {
     @Serial

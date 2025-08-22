@@ -3,6 +3,8 @@ package Model;
 /**
  * This abstract class represents a trivia question with a question prompt and an optional hint.
  * Subclasses will implement the logic for checking correctness and providing the correct answer.
+ *
+ * @author Husein & Chan
  */
 public abstract class Question {
     /** The question prompt that will be displayed to the player. */
