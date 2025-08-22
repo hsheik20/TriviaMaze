@@ -149,7 +149,6 @@ public class GameController implements PropertyChangeListener {
         if (theCorrect) Sounds.CORRECT.play();
         else            Sounds.INCORRECT.play();
 
-        System.out.println("Controller is sending door to Game.handleAnswer: " + pendingDoor);
         game.handleAnswer(pendingDoor, theCorrect);
 
         if (!theCorrect) {
@@ -319,8 +318,6 @@ public class GameController implements PropertyChangeListener {
         }
     }
 
-
-
     /**
      * This opens new game difficulty chooser and starts fresh new game
      */
@@ -368,12 +365,9 @@ public class GameController implements PropertyChangeListener {
         final boolean theEast  = theMaze.canMove(Direction.EAST);
         final boolean theWest  = theMaze.canMove(Direction.WEST);
 
-        // either call the accessor...
         view.getMazePanel().getDirectionPanel()
                 .setAvailable(theNorth, theSouth, theEast, theWest);
 
-        // ...or, if you add the pass-through on MazePanel, call that instead:
-        // view.getMazePanel().setAvailableDirections(theNorth, theSouth, theEast, theWest);
     }
 
 

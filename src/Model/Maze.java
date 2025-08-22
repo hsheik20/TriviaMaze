@@ -98,8 +98,6 @@ public class Maze implements Serializable {
         if (door == null || door.isBlocked()) return myCurrentPosition;
         myCurrentPosition = door.getNextRoom(myCurrentPosition);
         myCurrentPosition.markVisited();
-        door = getCurrentRoom().getDoor(theDir);
-        System.out.println("Attempting to step through door: " + door);
         return myCurrentPosition;
     }
 
@@ -184,7 +182,6 @@ public boolean move(final Direction theDir) {
                      Room upNeighbor = myGrid[r - 1][c];
                      Question question = myQuestionFactory.getNextAvailableQuestion();
                      Door door = new Door(room, upNeighbor, question);
-                    System.out.println("Connecting door: " + door);
                      room.setDoor(Direction.NORTH, door);
                      upNeighbor.setDoor(Direction.SOUTH, door);
                     }
@@ -194,7 +191,6 @@ public boolean move(final Direction theDir) {
                     Room leftNeighbor = myGrid[r][c - 1];
                     final Question question = myQuestionFactory.getNextAvailableQuestion();
                     Door door = new Door(room, leftNeighbor, question);
-                    System.out.println("Connecting door: " + door);
                     room.setDoor(Direction.WEST, door);
                     leftNeighbor.setDoor(Direction.EAST, door);
 

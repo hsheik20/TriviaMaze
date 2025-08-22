@@ -149,7 +149,6 @@ public class Game implements Serializable {
      * @param theCorrect {@code true} if the answer was correct, {@code false} otherwise.
      */
     public void handleAnswer(final Door theDoor, final boolean theCorrect) {
-        System.out.println("Handling answer for door: " + theDoor);
 
         myPlayer.incrementQuestionsAnswered();
 
@@ -161,10 +160,6 @@ public class Game implements Serializable {
                 theDoor.block();
                 pcs.firePropertyChange("doorBlocked", null, theDoor);
             }
-
-            // ✅ Print door state of current room
-            System.out.println("After handling answer:");
-            myMaze.getCurrentRoom().printDoorsDebug();
 
             // If the maze is now impossible, end the game
             if (!myMaze.hasPathToExitFromCurrent()) {

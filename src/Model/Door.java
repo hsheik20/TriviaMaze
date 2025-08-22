@@ -105,11 +105,5 @@ public class Door implements Serializable {
         return myQuestion;
     }
 
-    @Override
-    public String toString() {
-        return "Door@" + Integer.toHexString(System.identityHashCode(this)) +
-                " [locked=" + isBlocked() +
-                ", from=" + myRoomA.getRow() + "," + myRoomA.getCol() +
-                " to=" + myRoomB.getRow() + "," + myRoomB.getCol() + "]";
-    }
+
 }

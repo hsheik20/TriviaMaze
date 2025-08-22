@@ -55,10 +55,9 @@ public class MultipleChoiceQuestion extends Question {
         return (char) ('A' + myCorrectIndex);
     }
 
-    // Model/MultipleChoiceQuestion.java
     @Override
     public String cheatToken() {
-        return String.valueOf(getCorrectLetter());   // e.g., "C"
+        return String.valueOf(getCorrectLetter());
     }
 
 
